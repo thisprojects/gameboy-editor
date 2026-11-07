@@ -4,7 +4,7 @@ import { readExample } from './helpers';
 const PAGES = [
   { path: '/tile_examples.html', label: 'Tiles', program: 'tiles/tile_viewer.asm' },
   { path: '/sprite_examples.html', label: 'Sprites', program: 'sprite/sprite_demo.asm' },
-  { path: '/map_examples.html', label: 'Map', program: 'map/map_viewer.asm' },
+  { path: '/background_examples.html', label: 'Background', program: 'map/map_viewer.asm' },
   { path: '/font_examples.html', label: 'Font', program: 'font/font_demo.asm' },
   { path: '/level_examples.html', label: 'Level', program: 'level/level_demo.asm' },
   { path: '/music_examples.html', label: 'Music', program: 'music/music_demo.asm' },
@@ -61,7 +61,7 @@ test.describe('example pages', () => {
   test('the menu moves between the example pages and the book', async ({ page }) => {
     await page.goto('/tile_examples.html');
     const menu = page.getByRole('navigation', { name: 'Documentation' });
-    for (const next of ['Sprites', 'Map', 'Font', 'Level', 'Music', 'Tiles']) {
+    for (const next of ['Sprites', 'Background', 'Font', 'Level', 'Music', 'Tiles']) {
       await menu.getByRole('link', { name: next, exact: true }).click();
       await expect(menu.locator('a[aria-current="page"]')).toHaveText(next);
     }

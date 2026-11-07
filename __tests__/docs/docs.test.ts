@@ -101,7 +101,7 @@ describe('buildPage', () => {
     expect(html).toContain('<div class="subtitle">S</div>');
     expect(html).toContain('<p>hello</p>');
     expect(html).toContain('href="/tile_examples.html" aria-current="page"');
-    expect(html).not.toContain('href="/map_examples.html" aria-current');
+    expect(html).not.toContain('href="/background_examples.html" aria-current');
   });
 
   it('escapes the header text', () => {
@@ -127,7 +127,7 @@ describe('the example pages in public/', () => {
 
   it('there is one page per editor with an example, in the menu order', () => {
     expect(PAGES.map((p) => p.file)).toEqual([
-      'tile_examples.html', 'sprite_examples.html', 'map_examples.html', 'font_examples.html', 'level_examples.html', 'music_examples.html',
+      'tile_examples.html', 'sprite_examples.html', 'background_examples.html', 'font_examples.html', 'level_examples.html', 'music_examples.html',
     ]);
     expect(Object.keys(built)).toEqual(PAGES.map((p) => p.file));
   });
@@ -164,7 +164,7 @@ describe('the example pages in public/', () => {
   it.each([
     ['tile_examples.html', ['tiles/tile_viewer.asm', 'tiles/forest.asm', 'common/util.inc']],
     ['sprite_examples.html', ['sprite/sprite_demo.asm', 'sprite/hero.asm']],
-    ['map_examples.html', ['map/map_viewer.asm']],
+    ['background_examples.html', ['map/map_viewer.asm']],
     ['font_examples.html', ['font/font_demo.asm']],
     ['level_examples.html', ['level/level_demo.asm']],
     ['music_examples.html', ['music/music_demo.asm']],

@@ -3,7 +3,7 @@ import { test, expect } from './fixtures';
 const EDITORS = [
   { path: '/tile_editor', name: 'Tile Editor', accent: 'rgb(163, 230, 53)' },
   { path: '/sprite_editor', name: 'Sprite Editor', accent: 'rgb(52, 211, 153)' },
-  { path: '/map_editor', name: 'Map Editor', accent: 'rgb(34, 211, 238)' },
+  { path: '/background_editor', name: 'Background Editor', accent: 'rgb(34, 211, 238)' },
   { path: '/metatile_editor', name: 'Metatile Editor', accent: 'rgb(129, 140, 248)' },
   { path: '/level_editor', name: 'Level Editor', accent: 'rgb(244, 114, 182)' },
   { path: '/font_editor', name: 'Font Editor', accent: 'rgb(251, 191, 36)' },
@@ -49,7 +49,7 @@ test.describe('home page', () => {
   }
 
   test('keyboard focus shows the same highlight', async ({ page }) => {
-    const tile = page.getByRole('main').getByRole('link', { name: 'Map Editor', exact: true });
+    const tile = page.getByRole('main').getByRole('link', { name: 'Background Editor', exact: true });
     await tile.focus();
     await page.keyboard.press('Tab');
     await page.keyboard.press('Shift+Tab');
@@ -59,9 +59,9 @@ test.describe('home page', () => {
 
   test('the tiles can be reached with Tab and opened with Enter', async ({ page }) => {
     for (let i = 0; i < 3; i++) await page.keyboard.press('Tab'); // the three first tiles
-    await expect(page.getByRole('main').getByRole('link', { name: 'Map Editor', exact: true })).toBeFocused();
+    await expect(page.getByRole('main').getByRole('link', { name: 'Background Editor', exact: true })).toBeFocused();
     await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(/\/map_editor$/);
+    await expect(page).toHaveURL(/\/background_editor$/);
   });
 
   for (const editor of EDITORS) {

@@ -133,7 +133,7 @@ describe('FileNameModal component', () => {
       expect(defaultProps.onConfirm).toHaveBeenCalledTimes(2);
     });
 
-    it('has no leftover actions from the ZX Spectrum editor (SCR, CHR); an unknown action falls back to ASM instead of crashing', () => {
+    it('has no unsupported actions (SCR, CHR); an unknown action falls back to ASM instead of crashing', () => {
       render(<FileNameModal {...defaultProps} action={'exportScr' as never} />);
       expect(screen.queryByText(/SCR|CHR/)).not.toBeInTheDocument();
       expect(screen.getByRole('heading', { name: 'Export ASM' })).toBeInTheDocument();

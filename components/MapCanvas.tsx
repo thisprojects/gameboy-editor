@@ -33,7 +33,7 @@ const STATUS: Record<MapTool, string> = {
   fill: 'Click to flood-fill matching tiles',
   pick: 'Click a map cell to pick its tile',
   rubber: 'Click and drag to erase (tile 0)',
-  pan: 'Click and drag to pan, scroll to zoom',
+  pan: 'Click and drag to pan; scroll also pans, pinch or Ctrl/Cmd+scroll zooms',
 };
 
 const MIN_ZOOM = 1;

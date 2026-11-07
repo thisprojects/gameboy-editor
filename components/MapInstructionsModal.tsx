@@ -22,19 +22,26 @@ export function MapInstructionsModal({ isOpen, onClose }: MapInstructionsModalPr
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
       <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-5 border-b border-gray-700">
-          <h2 className="text-xl font-bold text-white">Map Editor — How to Use</h2>
+          <h2 className="text-xl font-bold text-white">Background Editor — How to Use</h2>
           <button onClick={handleClose} className="text-gray-400 hover:text-white text-2xl leading-none" aria-label="Close">
             &times;
           </button>
         </div>
         <div className="overflow-y-auto p-5 space-y-5 text-sm text-gray-300">
+          <section className="rounded-md bg-gray-900/60 border border-gray-700 p-3">
+            <h3 className="text-base font-semibold text-white mb-1">What you would make with this</h3>
+            <p className="text-white mb-1">Paint a still picture the player looks at: a title screen, a menu, a room.</p>
+            <p>
+              You choose tiles from a tileset and paint them onto a grid, like laying out a mosaic. That grid is the Game Boy&apos;s background layer, and the on-screen outline shows what the 160×144 display will actually show. Use it for anything that fits on one screen, or for a backdrop you scroll around. For a big world with walls, use the Level Editor instead.
+            </p>
+          </section>
           <section>
             <h3 className="text-base font-semibold text-white mb-2">Tile maps, not bitmaps</h3>
             <p>
               The Game Boy has no framebuffer. The background is a <strong className="text-white">32×32 map of tile
               indices</strong>, and the 160×144 screen (<strong className="text-white">20×18 tiles</strong>) is a window
-              onto it that scrolls with SCX/SCY and wraps around the edges. Unlike the ZX Spectrum there is no colour
-              clash: the whole map shares one palette register (BGP).
+              onto it that scrolls with SCX/SCY and wraps around the edges. The whole map shares one palette
+              register (BGP, the background palette), which maps each of the 4 shade numbers to a grey level.
             </p>
           </section>
           <section>

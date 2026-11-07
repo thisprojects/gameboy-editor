@@ -28,12 +28,19 @@ export function SpriteInstructionsModal({ isOpen, onClose }: SpriteInstructionsM
           </button>
         </div>
         <div className="overflow-y-auto p-5 space-y-5 text-sm text-gray-300">
+          <section className="rounded-md bg-gray-900/60 border border-gray-700 p-3">
+            <h3 className="text-base font-semibold text-white mb-1">What you would make with this</h3>
+            <p className="text-white mb-1">Make characters and objects that move.</p>
+            <p>
+              Use this for your hero, enemies, bullets, coins: anything that walks, flies or animates over the scenery. You draw each frame of the animation (a walk cycle, say) directly in this editor; it does not use the Tile Editor&apos;s tileset, set how long each frame lasts, and preview it playing. The Game Boy draws sprites on top of the background for you, so they move freely without redrawing anything.
+            </p>
+          </section>
           <section>
             <h3 className="text-base font-semibold text-white mb-2">Hardware sprites</h3>
             <p>
               The Game Boy has <strong className="text-white">40 hardware sprites</strong> (OAM entries), each one 8×8 or
               8×16 pixels. Larger characters are built from several entries, so a sprite here is a grid of tiles up to
-              32×32 pixels. There is no mask or pre-shifting as on the ZX Spectrum — <strong className="text-white">colour
+              32×32 pixels. There is no separate mask: <strong className="text-white">colour
               0 is transparent</strong>.
             </p>
           </section>

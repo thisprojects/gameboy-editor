@@ -2,23 +2,25 @@ import { useRef, useCallback } from 'react';
 import { Metatile, MetatileProject } from '@/types/metatile';
 import { Tile } from '@/types/map';
 import { encodeTiles } from '@/utils/map';
-import { isValidLibrary, maxTileIndex } from '@/utils/metatile';
+import { dimsFields, isValidLibrary, maxTileIndex, readDims } from '@/utils/metatile';
 import { exportMetatilesC, exportMetatilesRGBDS } from '@/utils/levelExport';
 import { readTilesetFile } from '@/utils/tilesetImport';
 import { downloadBlob } from '@/utils/download';
 
 interface UseMetatileProjectProps {
-  size: number;
+  mw: number;
+  mh: number;
   tiles: Tile[];
   metatiles: Metatile[];
   fileName: string;
   setFileName: (name: string) => void;
-  loadProjectData: (data: { size: number; tiles: Tile[]; metatiles: Metatile[] }) => void;
+  loadProjectData: (data: { mw: number; mh: number; tiles: Tile[]; metatiles: Metatile[] }) => void;
   setTileset: (tiles: Tile[]) => void;
 }
 
 export function useMetatileProject({
-  size,
+  mw,
+  mh,
   tiles,
   metatiles,
   fileName,
@@ -30,14 +32,14 @@ export function useMetatileProject({
   const tilesetInputRef = useRef<HTMLInputElement>(null);
 
   const saveProject = useCallback(() => {
-    const project: MetatileProject = { version: 1, type: 'metatiles', size, tiles, metatiles };
+    const project: MetatileProject = { version: 1, type: 'metatiles', ...dimsFields({ mw, mh }), tiles, metatiles };
     downloadBlob(JSON.stringify(project), `${fileName}_metatiles.json`, 'application/json');
-  }, [size, tiles, metatiles, fileName]);
+  }, [mw, mh, tiles, metatiles, fileName]);
 
   /** Tiles up to the highest index any metatile uses. */
   const exportInput = useCallback(
-    () => ({ size, metatiles, tileData: encodeTiles(tiles.slice(0, maxTileIndex(metatiles) + 1)) }),
-    [size, metatiles, tiles]
+    () => ({ mw, mh, metatiles, tileData: encodeTiles(tiles.slice(0, maxTileIndex(metatiles) + 1)) }),
+    [mw, mh, metatiles, tiles]
   );
 
   const exportASM = useCallback(() => {
@@ -60,11 +62,12 @@ export function useMetatileProject({
       reader.onload = (ev) => {
         try {
           const d = JSON.parse(ev.target?.result as string);
-          if (d?.type !== 'metatiles' || !isValidLibrary(d.size, d.tiles, d.metatiles)) {
+          const dims = readDims(d);
+          if (d?.type !== 'metatiles' || !dims || !isValidLibrary(dims, d.tiles, d.metatiles)) {
             alert('Invalid file: not a Game Boy metatile project.');
             return;
           }
-          loadProjectData({ size: d.size, tiles: d.tiles, metatiles: d.metatiles });
+          loadProjectData({ ...dims, tiles: d.tiles, metatiles: d.metatiles });
           setFileName(file.name.replace(/_metatiles\.json$|\.json$/, ''));
         } catch {
           alert('Failed to load project: invalid JSON.');

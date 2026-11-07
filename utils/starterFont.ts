@@ -1,5 +1,5 @@
 // Starter font for the Game Boy font editor — ASCII 32–127 (96 characters).
-// Carried over from zx-editor's ZX Spectrum ROM font (8 bytes per glyph, MSB = leftmost pixel); each set pixel becomes shade 3.
+// 8 bytes per glyph, MSB = leftmost pixel; each set pixel becomes shade 3.
 export const STARTER_FONT = new Uint8Array([
   // 32 SPACE
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -189,7 +189,7 @@ export const STARTER_FONT = new Uint8Array([
   0x00, 0x08, 0x08, 0x08, 0x08, 0x08, 0x08, 0x00,
   // 125 }
   0x00, 0x38, 0x08, 0x06, 0x08, 0x38, 0x00, 0x00,
-  // 126 © (copyright symbol — ZX Spectrum ROM position)
+  // 126 © (copyright symbol)
   0x00, 0x3C, 0x42, 0x4E, 0x42, 0x42, 0x3C, 0x00,
   // 127 DEL (checkerboard inverse-video block)
   0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55, 0xAA, 0x55,

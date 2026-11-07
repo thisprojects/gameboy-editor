@@ -28,12 +28,19 @@ export function LevelInstructionsModal({ isOpen, onClose }: LevelInstructionsMod
           </button>
         </div>
         <div className="overflow-y-auto p-5 space-y-5 text-sm text-gray-300">
+          <section className="rounded-md bg-gray-900/60 border border-gray-700 p-3">
+            <h3 className="text-base font-semibold text-white mb-1">What you would make with this</h3>
+            <p className="text-white mb-1">Lay out a whole world that is bigger than the screen: a platformer stage, a cave, a dungeon.</p>
+            <p>
+              You paint with the metatiles you built, and the level can be many screens wide and tall. The outline shows what the player sees at one moment, so you can check how it scrolls. Solid blocks can be tinted so you can see where the walls are. The export gives your game the level layout and the collision information it needs.
+            </p>
+          </section>
           <section>
             <h3 className="text-base font-semibold text-white mb-2">Scrolling levels from metatiles</h3>
             <p>
               Game Boy levels are usually bigger than one screen and scroll. Here a level is a grid of{' '}
-              <strong className="text-white">metatiles</strong> (up to 256×256 tiles in total) instead of the separate
-              screens used by the ZX level editor. The red outline shows what one 20×18-tile screen covers at the chosen
+              <strong className="text-white">metatiles</strong> (up to 256×256 tiles in total) that scrolls past the
+              160×144 screen. The red outline shows what one 20×18-tile screen covers at the chosen
               SCX/SCY, in tiles.
             </p>
           </section>
@@ -42,7 +49,7 @@ export function LevelInstructionsModal({ isOpen, onClose }: LevelInstructionsMod
             <p>
               Import a library saved from the Metatile Editor (<code className="bg-gray-700 px-1 rounded">.json</code>); it
               includes the tileset and collision flags. Importing a smaller library resets level cells that pointed past it
-              to metatile 0, and the level is cropped if the new metatile size allows fewer cells. Solid metatiles are tinted
+              to metatile 0, and the level is cropped if the new metatile size allows fewer cells (a level is at most 256×256 tiles, so wider metatiles mean fewer cells across). Solid metatiles are tinted
               red when <em>Show collision</em> is on.
             </p>
           </section>

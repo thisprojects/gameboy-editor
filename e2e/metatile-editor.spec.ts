@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures';
-import { exportFile, exportText, examplePath, pixelAt, clickAt, canvasSize } from './helpers';
+import { exportFile, exportText, examplePath, pixelAt, clickAt, canvasSize, typeNumber } from './helpers';
 
 const GRID = 'metatile-canvas'; // the tiles of the selected metatile: 64 px per tile at the default zoom
 const TILES = 'tile-palette';
@@ -91,13 +91,25 @@ test.describe('metatile editor', () => {
   });
 
   test('switching to 4x4 metatiles keeps each metatile\'s top-left tiles', async ({ page }) => {
-    await page.getByLabel('Metatile size').selectOption('4');
+    await typeNumber(page, 'Metatile width in tiles', 4);
+    await typeNumber(page, 'Metatile height in tiles', 4);
     expect(await canvasSize(page, GRID)).toEqual({ width: 4 * TILE, height: 4 * TILE });
     const asm = await exportText(page, 'big');
     expect(asm).toContain('DEF BIG_METATILE_SIZE EQU 4');
     expect(asm).toContain('db $01, $01, $00, $00, $01, $01, $00, $00, $00, $00, $00, $00, $00, $00, $00, $00 ; metatile 1');
+    await page.keyboard.press('ControlOrMeta+z'); // back to 4 wide x 2 high
     await page.keyboard.press('ControlOrMeta+z'); // back to 2x2
     expect(await canvasSize(page, GRID)).toEqual({ width: 2 * TILE, height: 2 * TILE });
+  });
+
+  test('a metatile can be any shape: a 1x4 floor strip', async ({ page }) => {
+    await typeNumber(page, 'Metatile width in tiles', 1);
+    await typeNumber(page, 'Metatile height in tiles', 4);
+    expect(await canvasSize(page, GRID)).toEqual({ width: 1 * TILE, height: 4 * TILE });
+    const asm = await exportText(page, 'floor');
+    expect(asm).toContain('DEF FLOOR_METATILE_WIDTH EQU 1');
+    expect(asm).toContain('DEF FLOOR_METATILE_HEIGHT EQU 4');
+    expect(asm).not.toContain('METATILE_SIZE');
   });
 
   test('importing a tileset (a Tile Editor project) and a project round trip', async ({ page }) => {

@@ -14,7 +14,8 @@ interface LevelState {
 }
 
 interface Library {
-  size: number;
+  mw: number;
+  mh: number;
   tiles: Tile[];
   metatiles: Metatile[];
 }
@@ -34,7 +35,7 @@ export function useLevelDrawing() {
   const { map } = state;
 
   const [library, setLibraryState] = useState<Library>(defaultLibrary);
-  const { size, tiles, metatiles } = library;
+  const { mw, mh, tiles, metatiles } = library;
 
   const [selectedMetatile, setSelectedMetatile] = useState(1);
   const [currentTool, setCurrentTool] = useState<MapTool>('stamp');
@@ -131,13 +132,12 @@ export function useLevelDrawing() {
   /** Resize the level (in metatiles), keeping content from the top-left. */
   const resizeLevel = useCallback(
     (w: number, h: number) => {
-      const max = maxLevelMetatiles(size);
-      if (!Number.isInteger(w) || !Number.isInteger(h) || w < 1 || h < 1 || w > max || h > max) return;
+      if (!Number.isInteger(w) || !Number.isInteger(h) || w < 1 || h < 1 || w > maxLevelMetatiles(mw) || h > maxLevelMetatiles(mh)) return;
       if (w === width && h === height) return;
       pushHistory();
       setState((prev) => ({ map: resizeGrid(prev.map, w, h) }));
     },
-    [size, width, height, pushHistory, setState]
+    [mw, mh, width, height, pushHistory, setState]
   );
 
   /** Replace the library; map cells pointing past the new metatile list are reset to 0 and the map is cropped to fit. */
@@ -145,9 +145,10 @@ export function useLevelDrawing() {
     (lib: Library) => {
       clearHistory();
       setLibraryState(lib);
-      const max = maxLevelMetatiles(lib.size);
+      const maxW = maxLevelMetatiles(lib.mw);
+      const maxH = maxLevelMetatiles(lib.mh);
       setState((prev) => ({
-        map: clampMap(resizeGrid(prev.map, Math.min(prev.map[0].length, max), Math.min(prev.map.length, max)), lib.metatiles.length),
+        map: clampMap(resizeGrid(prev.map, Math.min(prev.map[0].length, maxW), Math.min(prev.map.length, maxH)), lib.metatiles.length),
       }));
       setSelectedMetatile((s) => Math.min(s, lib.metatiles.length - 1));
     },
@@ -173,7 +174,8 @@ export function useLevelDrawing() {
     map,
     width,
     height,
-    size,
+    mw,
+    mh,
     tiles,
     metatiles,
     selectedMetatile,

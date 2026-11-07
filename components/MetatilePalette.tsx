@@ -34,7 +34,14 @@ export function MetatilePalette({ metatiles, tiles, selected, onSelect, preset, 
       const y = Math.floor(i / columns) * cell;
       ctx.fillStyle = i === selected ? '#1d4ed8' : '#1f2937';
       ctx.fillRect(x, y, cell, cell);
-      ctx.drawImage(renderMetatileCanvas(m.tiles, tiles, preset), x + PAD, y + PAD, thumb, thumb);
+      // keep the metatile's proportions (a 1x4 floor strip is tall and thin) and centre it in the cell
+      const img = renderMetatileCanvas(m.tiles, tiles, preset);
+      const scale = thumb / Math.max(img.width, img.height);
+      const w = Math.max(1, Math.round(img.width * scale));
+      const h = Math.max(1, Math.round(img.height * scale));
+      const ix = x + PAD + Math.floor((thumb - w) / 2);
+      const iy = y + PAD + Math.floor((thumb - h) / 2);
+      ctx.drawImage(img, ix, iy, w, h);
       if (m.solid) {
         ctx.fillStyle = '#ef4444';
         ctx.fillRect(x + PAD, y + PAD, 8, 8);

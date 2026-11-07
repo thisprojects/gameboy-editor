@@ -59,7 +59,9 @@ describe('Metatile editor page', () => {
     fireEvent.click(screen.getByText('Add'));
     expect(screen.getByText(/Metatiles — 2 of 3/)).toBeInTheDocument();
     fireEvent.click(screen.getByLabelText('Solid (collision)'));
-    fireEvent.change(screen.getByLabelText('Metatile size'), { target: { value: '4' } });
+    const mw = screen.getByLabelText('Metatile width in tiles');
+    fireEvent.change(mw, { target: { value: '4' } });
+    fireEvent.blur(mw);
     fireEvent.change(screen.getByLabelText(/Zoom/), { target: { value: '4' } });
     fireEvent.click(screen.getByLabelText('Show grid'));
     fireEvent.click(screen.getByText('Save project'));
@@ -75,9 +77,9 @@ describe('Metatile editor page', () => {
   it('zooms with the wheel', () => {
     render(<MetatileEditorPage />);
     const canvas = screen.getByTestId('metatile-canvas');
-    fireEvent.wheel(canvas, { deltaY: -100 });
+    fireEvent.wheel(canvas, { deltaY: -100, ctrlKey: true });
     expect(screen.getByLabelText('Zoom (9x)')).toBeInTheDocument();
-    fireEvent.wheel(canvas, { deltaY: 100 });
+    fireEvent.wheel(canvas, { deltaY: 100, ctrlKey: true });
     expect(screen.getByLabelText('Zoom (8x)')).toBeInTheDocument();
   });
 });
@@ -155,7 +157,7 @@ describe('Level editor page', () => {
     jest.spyOn(palette, 'getBoundingClientRect').mockReturnValue(rect(180, 36));
     fireEvent.click(palette, { clientX: 5, clientY: 5 });
     expect(screen.getByText(/Metatiles — 0 of 2/)).toBeInTheDocument();
-    fireEvent.wheel(screen.getByTestId('level-canvas'), { deltaY: -100 });
+    fireEvent.wheel(screen.getByTestId('level-canvas'), { deltaY: -100, ctrlKey: true });
     expect(screen.getByLabelText('Zoom (3x)')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Save project'));
     fireEvent.click(screen.getByText('Cancel'));

@@ -8,7 +8,7 @@ sound). The worked explanations are in the editor's **Documentation** menu (`pub
 |---|---|---|---|
 | `tiles/` | Tile Editor | `tile_viewer.asm` | copies the tiles to VRAM and shows them in a row |
 | `sprite/` | Sprite Editor | `sprite_demo.asm` | animates the hero from the frame table and moves it with the d-pad |
-| `map/` | Map Editor | `map_viewer.asm` | copies the tile map to the background and scrolls it |
+| `map/` | Background Editor | `map_viewer.asm` | copies the tile map to the background and scrolls it |
 | `font/` | Font Editor | `font_demo.asm` | types a message using the exported font |
 | `level/` | Metatile + Level Editors | `level_demo.asm` | draws the level, collision-checks a sprite, scrolls a camera |
 | `music/` | Music Editor | `music_demo.asm` | plays the song with the exported player (A stops, B restarts) |

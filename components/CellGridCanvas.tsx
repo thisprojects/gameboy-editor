@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useCallback, useState } from 'react';
 import { Point } from '@/types';
+import { isZoomWheel, zoomStep } from '@/utils/wheel';
 
 /** The work area is the window minus the 40px navbar (h-screen would run 40px off the bottom). */
 export const WORK_AREA_HEIGHT = 'h-[calc(100vh-40px)]';
@@ -9,10 +10,12 @@ export const WORK_AREA_HEIGHT = 'h-[calc(100vh-40px)]';
 interface CellGridCanvasProps {
   cols: number;
   rows: number;
-  /** Screen pixels per cell */
+  /** Screen pixels per cell (width; also the height unless `cellHeight` is given) */
   cellSize: number;
+  /** Screen pixels of cell height, for cells that are not square */
+  cellHeight?: number;
   /** Draw one cell; (px, py) is its top-left on the canvas. Pass a stable (memoised) function. */
-  renderCell: (ctx: CanvasRenderingContext2D, x: number, y: number, px: number, py: number, size: number) => void;
+  renderCell: (ctx: CanvasRenderingContext2D, x: number, y: number, px: number, py: number, width: number, height: number) => void;
   /** Optional drawing on top of the cells and grid. Pass a stable (memoised) function. */
   overlay?: (ctx: CanvasRenderingContext2D) => void;
   showGrid: boolean;
@@ -33,6 +36,7 @@ export function CellGridCanvas({
   cols,
   rows,
   cellSize,
+  cellHeight: cellHeightProp,
   renderCell,
   overlay,
   showGrid,
@@ -51,9 +55,11 @@ export function CellGridCanvas({
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [hover, setHover] = useState<Point | null>(null);
+  const wheelAcc = useRef(0);
 
+  const cellH = cellHeightProp ?? cellSize;
   const width = cols * cellSize;
-  const height = rows * cellSize;
+  const height = rows * cellH;
 
   const draw = useCallback(() => {
     const ctx = canvasRef.current?.getContext('2d');
@@ -61,7 +67,7 @@ export function CellGridCanvas({
     ctx.imageSmoothingEnabled = false;
     ctx.clearRect(0, 0, width, height);
     for (let y = 0; y < rows; y++) {
-      for (let x = 0; x < cols; x++) renderCell(ctx, x, y, x * cellSize, y * cellSize, cellSize);
+      for (let x = 0; x < cols; x++) renderCell(ctx, x, y, x * cellSize, y * cellH, cellSize, cellH);
     }
     if (showGrid) {
       ctx.strokeStyle = '#6666aa66';
@@ -74,13 +80,13 @@ export function CellGridCanvas({
       }
       for (let y = 0; y <= rows; y++) {
         ctx.beginPath();
-        ctx.moveTo(0, y * cellSize);
-        ctx.lineTo(width, y * cellSize);
+        ctx.moveTo(0, y * cellH);
+        ctx.lineTo(width, y * cellH);
         ctx.stroke();
       }
     }
     overlay?.(ctx);
-  }, [cols, rows, cellSize, width, height, renderCell, overlay, showGrid]);
+  }, [cols, rows, cellSize, cellH, width, height, renderCell, overlay, showGrid]);
 
   useEffect(() => {
     draw();
@@ -92,7 +98,12 @@ export function CellGridCanvas({
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      onWheelZoom(e.deltaY > 0 ? -1 : 1);
+      if (!isZoomWheel(e)) {
+        setPanOffset((o) => ({ x: o.x - e.deltaX, y: o.y - e.deltaY }));
+        return;
+      }
+      const step = zoomStep(wheelAcc, e.deltaY);
+      if (step) onWheelZoom(step);
     };
     container.addEventListener('wheel', handleWheel, { passive: false });
     return () => container.removeEventListener('wheel', handleWheel);
@@ -102,7 +113,7 @@ export function CellGridCanvas({
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return null;
     const x = Math.floor((e.clientX - rect.left) / cellSize);
-    const y = Math.floor((e.clientY - rect.top) / cellSize);
+    const y = Math.floor((e.clientY - rect.top) / cellH);
     return x >= 0 && x < cols && y >= 0 && y < rows ? { x, y } : null;
   };
 
@@ -170,7 +181,7 @@ export function CellGridCanvas({
           <div className="mt-2 text-sm text-gray-400 text-center">
             <p>{status}</p>
             <p className="text-xs text-gray-500 mt-1">
-              {hover && hoverLabel ? hoverLabel(hover.x, hover.y) : 'Right-click drag to pan • Scroll to zoom'}
+              {hover && hoverLabel ? hoverLabel(hover.x, hover.y) : 'Scroll or right-click drag to pan • Pinch or Ctrl/Cmd+scroll to zoom'}
             </p>
           </div>
         </div>

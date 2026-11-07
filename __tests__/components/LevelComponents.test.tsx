@@ -11,7 +11,7 @@ import { createMetatile } from '@/utils/metatile';
 
 const rect = (w: number, h: number) => ({ left: 0, top: 0, width: w, height: h, right: w, bottom: h, x: 0, y: 0, toJSON: () => ({}) });
 const tiles = [createBlankTile(), createSolidTile(3)];
-const metatiles = Array.from({ length: 7 }, (_, i) => createMetatile(2, i % 2, i === 3));
+const metatiles = Array.from({ length: 7 }, (_, i) => createMetatile(2, 2, i % 2, i === 3));
 
 describe('CellGridCanvas', () => {
   function setup(overrides: Record<string, unknown> = {}) {
@@ -28,10 +28,15 @@ describe('CellGridCanvas', () => {
   }
   const at = (x: number, y: number, extra = {}) => ({ clientX: x * 10 + 5, clientY: y * 10 + 5, ...extra });
 
+  it('draws non-square cells with their own height', () => {
+    const { props } = setup({ showGrid: false, cellHeight: 40 } as never);
+    expect(props.renderCell).toHaveBeenCalledWith(expect.anything(), 3, 2, 30, 80, 10, 40);
+  });
+
   it('renders every cell and the overlay', () => {
     const { props } = setup({ showGrid: false });
     expect(props.renderCell).toHaveBeenCalledTimes(12);
-    expect(props.renderCell).toHaveBeenCalledWith(expect.anything(), 3, 2, 30, 20, 10);
+    expect(props.renderCell).toHaveBeenCalledWith(expect.anything(), 3, 2, 30, 20, 10, 10);
     expect(props.overlay).toHaveBeenCalled();
   });
 
@@ -55,7 +60,7 @@ describe('CellGridCanvas', () => {
   it('shows the default hint without a hover label and ignores presses outside', () => {
     const { props, canvas } = setup({ hoverLabel: undefined });
     fireEvent.mouseMove(canvas, at(1, 1));
-    expect(screen.getByText(/Right-click drag to pan/)).toBeInTheDocument();
+    expect(screen.getByText(/Scroll or right-click drag to pan/)).toBeInTheDocument();
     fireEvent.mouseDown(canvas, { clientX: 999, clientY: 5 });
     fireEvent.mouseMove(canvas, { clientX: 999, clientY: 5 });
     expect(props.onBeginStroke).not.toHaveBeenCalled();
@@ -86,8 +91,8 @@ describe('CellGridCanvas', () => {
 
   it('wheel zooms in and out', () => {
     const { props, canvas } = setup();
-    fireEvent.wheel(canvas, { deltaY: -100 });
-    fireEvent.wheel(canvas, { deltaY: 100 });
+    fireEvent.wheel(canvas, { deltaY: -100, ctrlKey: true });
+    fireEvent.wheel(canvas, { deltaY: 100, ctrlKey: true });
     expect(props.onWheelZoom).toHaveBeenNthCalledWith(1, 1);
     expect(props.onWheelZoom).toHaveBeenNthCalledWith(2, -1);
   });
@@ -129,7 +134,7 @@ function metatileToolbar(overrides: Record<string, unknown> = {}) {
      'onImportTileset','onExportASM','onExportC','onExport2bpp'].map((k) => [k, jest.fn()])
   );
   const props = {
-    currentTool: 'stamp', tiles, selectedTile: 1, metatiles, selectedMetatile: 3, size: 2, solid: true,
+    currentTool: 'stamp', tiles, selectedTile: 1, metatiles, selectedMetatile: 3, mw: 2, mh: 2, solid: true,
     preset: PALETTE_PRESETS[0], showGrid: true, zoom: 8, canUndo: true, canRedo: true, historyIndex: 1, ...fns, ...overrides,
   };
   render(<MetatileToolbarContent {...(props as unknown as React.ComponentProps<typeof MetatileToolbarContent>)} />);
@@ -150,8 +155,14 @@ describe('MetatileToolbarContent', () => {
     const p = metatileToolbar();
     expect(screen.getByText('Tileset — tile 1 of 2')).toBeInTheDocument();
     expect(screen.getByText(/Metatiles — 3 of 7/)).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Metatile size'), { target: { value: '4' } });
-    expect(p.onSizeChange).toHaveBeenCalledWith(4);
+    const w = screen.getByLabelText('Metatile width in tiles');
+    fireEvent.change(w, { target: { value: '1' } });
+    fireEvent.blur(w);
+    expect(p.onSizeChange).toHaveBeenCalledWith(1, 2);
+    const h = screen.getByLabelText('Metatile height in tiles');
+    fireEvent.change(h, { target: { value: '4' } });
+    fireEvent.blur(h);
+    expect(p.onSizeChange).toHaveBeenCalledWith(2, 4);
     expect(screen.getByLabelText('Solid (collision)')).toBeChecked();
     fireEvent.click(screen.getByLabelText('Solid (collision)'));
     expect(p.onToggleSolid).toHaveBeenCalled();
@@ -199,7 +210,7 @@ function levelToolbar(overrides: Record<string, unknown> = {}) {
      'onExportC','onExportTilemap','onExport2bpp','onClear'].map((k) => [k, jest.fn()])
   );
   const props = {
-    currentTool: 'stamp', tiles, metatiles, size: 2, selectedMetatile: 1, displayPreset: PALETTE_PRESETS[0], basePreset: PALETTE_PRESETS[0],
+    currentTool: 'stamp', tiles, metatiles, mw: 2, mh: 2, selectedMetatile: 1, displayPreset: PALETTE_PRESETS[0], basePreset: PALETTE_PRESETS[0],
     bgpIndex: 0, width: 16, height: 12, showGrid: true, showCollision: true, showViewport: true, scx: 4, scy: 5, zoom: 2,
     canUndo: true, canRedo: true, historyIndex: 1, ...fns, ...overrides,
   };
@@ -222,7 +233,7 @@ describe('LevelToolbarContent', () => {
 
   it('resizes the level and shows the tile dimensions', () => {
     const p = levelToolbar();
-    expect(screen.getByText(/max 128\) — 32×24 tiles/)).toBeInTheDocument();
+    expect(screen.getByText(/max 128×128\) — 32×24 tiles/)).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Width in metatiles'), { target: { value: '20' } });
     expect(p.onResize).toHaveBeenCalledWith(20, 12);
     fireEvent.change(screen.getByLabelText('Height in metatiles'), { target: { value: '9' } });

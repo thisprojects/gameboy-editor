@@ -22,7 +22,7 @@ const STATUS: Record<MapTool, string> = {
   fill: 'Click to flood-fill matching metatiles',
   pick: 'Click a cell to pick its metatile',
   rubber: 'Click and drag to erase (metatile 0)',
-  pan: 'Click and drag to pan, scroll to zoom',
+  pan: 'Click and drag to pan; scroll also pans, pinch or Ctrl/Cmd+scroll zooms',
 };
 
 export default function LevelEditorPage() {
@@ -47,7 +47,8 @@ export default function LevelEditorPage() {
     loadProject, importLibrary, triggerLoadDialog, triggerLibraryDialog,
   } = useLevelProject({
     map: drawing.map,
-    size: drawing.size,
+    mw: drawing.mw,
+    mh: drawing.mh,
     tiles: drawing.tiles,
     metatiles: drawing.metatiles,
     fileName,
@@ -71,16 +72,17 @@ export default function LevelEditorPage() {
     [drawing.metatiles, drawing.tiles, displayPreset]
   );
 
-  const { map, metatiles, size, showCollision, showViewport, scx, scy, rectStart, rectEnd, currentTool } = drawing;
-  const cellSize = size * TILE_SIZE * zoom;
+  const { map, metatiles, mw, mh, showCollision, showViewport, scx, scy, rectStart, rectEnd, currentTool } = drawing;
+  const cellSize = mw * TILE_SIZE * zoom;
+  const cellHeight = mh * TILE_SIZE * zoom;
 
   const renderCell = useCallback(
-    (ctx: CanvasRenderingContext2D, x: number, y: number, px: number, py: number, s: number) => {
+    (ctx: CanvasRenderingContext2D, x: number, y: number, px: number, py: number, w: number, h: number) => {
       const index = map[y][x];
-      ctx.drawImage(metatileCanvases[index] ?? metatileCanvases[0], px, py, s, s);
+      ctx.drawImage(metatileCanvases[index] ?? metatileCanvases[0], px, py, w, h);
       if (showCollision && metatiles[index]?.solid) {
         ctx.fillStyle = 'rgba(239, 68, 68, 0.35)';
-        ctx.fillRect(px, py, s, s);
+        ctx.fillRect(px, py, w, h);
       }
     },
     [map, metatileCanvases, metatiles, showCollision]
@@ -98,13 +100,13 @@ export default function LevelEditorPage() {
         ctx.fillStyle = 'rgba(59, 130, 246, 0.35)';
         ctx.fillRect(
           Math.min(rectStart.x, rectEnd.x) * cellSize,
-          Math.min(rectStart.y, rectEnd.y) * cellSize,
+          Math.min(rectStart.y, rectEnd.y) * cellHeight,
           (Math.abs(rectEnd.x - rectStart.x) + 1) * cellSize,
-          (Math.abs(rectEnd.y - rectStart.y) + 1) * cellSize
+          (Math.abs(rectEnd.y - rectStart.y) + 1) * cellHeight
         );
       }
     },
-    [showViewport, scx, scy, zoom, currentTool, rectStart, rectEnd, cellSize]
+    [showViewport, scx, scy, zoom, currentTool, rectStart, rectEnd, cellSize, cellHeight]
   );
 
   const onWheelZoom = useCallback((dir: 1 | -1) => setZoom((z) => Math.max(1, Math.min(6, z + dir))), []);
@@ -134,7 +136,8 @@ export default function LevelEditorPage() {
           onSelectTool={drawing.selectTool}
           tiles={drawing.tiles}
           metatiles={drawing.metatiles}
-          size={drawing.size}
+          mw={drawing.mw}
+          mh={drawing.mh}
           selectedMetatile={drawing.selectedMetatile}
           onSelectMetatile={drawing.setSelectedMetatile}
           displayPreset={displayPreset}
@@ -181,6 +184,7 @@ export default function LevelEditorPage() {
           cols={drawing.width}
           rows={drawing.height}
           cellSize={cellSize}
+          cellHeight={cellHeight}
           renderCell={renderCell}
           overlay={overlay}
           showGrid={drawing.showGrid}

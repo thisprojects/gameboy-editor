@@ -98,3 +98,10 @@ export async function glyphInk(page: Page, testId = 'tile-canvas', darkest = '#0
     return count;
   }, darkest);
 }
+
+/** Zoom the canvas under the mouse: Ctrl/Cmd + wheel (what a trackpad pinch sends). A plain wheel pans. */
+export async function zoomWheel(page: import('@playwright/test').Page, deltaY: number): Promise<void> {
+  await page.keyboard.down('ControlOrMeta');
+  await page.mouse.wheel(0, deltaY);
+  await page.keyboard.up('ControlOrMeta');
+}

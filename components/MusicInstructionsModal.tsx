@@ -28,6 +28,13 @@ export function MusicInstructionsModal({ isOpen, onClose }: MusicInstructionsMod
           </button>
         </div>
         <div className="overflow-y-auto p-5 space-y-5 text-sm text-gray-300">
+          <section className="rounded-md bg-gray-900/60 border border-gray-700 p-3">
+            <h3 className="text-base font-semibold text-white mb-1">What you would make with this</h3>
+            <p className="text-white mb-1">Compose the songs and sound for your game, like a title tune or level music.</p>
+            <p>
+              This is a tracker: you type notes into a grid, one column for each of the Game Boy&apos;s four sound channels (two square-wave voices, one wave voice for bass or soft tones, and one noise voice for drums). You design the instruments, press Play to hear the song as the hardware would play it, and export it together with a small player routine to include in your game.
+            </p>
+          </section>
           <section>
             <h3 className="text-base font-semibold text-white mb-2">The Game Boy sound chip</h3>
             <p>

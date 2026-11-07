@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Map Example: Displaying and Scrolling an Exported Tile Map on a Game Boy</title>
+<title>Background Example: Displaying and Scrolling an Exported Tile Map on a Game Boy</title>
 <style>
 /* The four shades of the original Game Boy LCD, plus two extra tints for readable text.
    (Copied from the Game Boy book, whose tests check every text/background pair for WCAG AA contrast.) */
@@ -158,8 +158,8 @@ nav.examples-nav a[aria-current="page"] { background: var(--lcd-darkest); color:
 
 <div class="title-block">
 <div class="screen">
-<h1>Map: Showing and Scrolling a Tile Map</h1>
-<div class="subtitle">From the Map Editor to a scrolling background</div>
+<h1>Background: Showing and Scrolling a Tile Map</h1>
+<div class="subtitle">From the Background Editor to a scrolling background</div>
 </div>
 <div class="bezel-text">DOT MATRIX &middot; 160 &times; 144 &middot; 4 SHADES</div>
 </div>
@@ -167,7 +167,7 @@ nav.examples-nav a[aria-current="page"] { background: var(--lcd-darkest); color:
 <nav class="examples-nav" aria-label="Documentation">
 <strong>Examples:</strong> <a href="/tile_examples.html">Tiles</a>
 <a href="/sprite_examples.html">Sprites</a>
-<a href="/map_examples.html" aria-current="page">Map</a>
+<a href="/background_examples.html" aria-current="page">Background</a>
 <a href="/font_examples.html">Font</a>
 <a href="/level_examples.html">Level</a>
 <a href="/music_examples.html">Music</a>
@@ -176,14 +176,14 @@ nav.examples-nav a[aria-current="page"] { background: var(--lcd-darkest); color:
 
 <section id="introduction">
 <h2>Introduction</h2>
-<p>The ZX Spectrum scene editor produces a screen of pixels with colour attributes. The Game Boy has no screen of pixels: the picture you see is a grid of tile numbers, the <strong>background map</strong>, drawn with the tiles in VRAM. The map is <strong>32&times;32 tiles</strong> (256&times;256 pixels) but the screen shows a window of only <strong>20&times;18 tiles</strong> (160&times;144 pixels). Two registers, <code>rSCX</code> and <code>rSCY</code>, say where that window is, and it wraps round the edges of the map. That is all a scrolling background is.</p>
+<p>The Game Boy has no screen of pixels: the picture you see is a grid of tile numbers, the <strong>background map</strong>, drawn with the tiles in VRAM. The map is <strong>32&times;32 tiles</strong> (256&times;256 pixels) but the screen shows a window of only <strong>20&times;18 tiles</strong> (160&times;144 pixels). Two registers, <code>rSCX</code> and <code>rSCY</code>, say where that window is, and it wraps round the edges of the map. That is all a scrolling background is.</p>
 <p>The first example, <a href="/tile_examples.html">Tiles</a>, shows how tiles get into VRAM; this one adds the map. Its <a href="/tile_examples.html#helpers">helper routines</a> are explained there.</p>
 </section>
 
 <section id="exporting">
 <h2>Exporting from the Editor</h2>
 <ol class="steps">
-<li>In the <strong>Map Editor</strong>, import your tileset (a file saved from the Tile Editor, or a <code>.2bpp</code>), pick tiles in the palette and paint the map. <code>meadow_map.json</code> is the map used here: load it with <em>Load project</em>, tileset included.</li>
+<li>In the <strong>Background Editor</strong>, import your tileset (a file saved from the Tile Editor, or a <code>.2bpp</code>), pick tiles in the palette and paint the map. <code>meadow_map.json</code> is the map used here: load it with <em>Load project</em>, tileset included.</li>
 <li>Choose the <strong>Export area</strong>: the <em>full map</em> (32&times;32), just the <em>screen</em> (20&times;18 at the SCX/SCY you set) or the <em>used area</em> (the box around every tile that is not tile 0).</li>
 <li>Click <strong>Export RGBDS (.asm)</strong> and name the file <code>meadow</code>. (<em>Export map (.tilemap)</em> is just the map bytes, <em>Export tiles (.2bpp)</em> just the tiles.)</li>
 </ol>
@@ -277,9 +277,9 @@ nav.examples-nav a[aria-current="page"] { background: var(--lcd-darkest); color:
 
 <section id="source">
 <h2>Complete Source</h2>
-<pre><code><span class="comment">; map_viewer.asm - show the tile map exported from the Map Editor and scroll it</span>
+<pre><code><span class="comment">; map_viewer.asm - show the tile map exported from the Background Editor and scroll it</span>
 <span class="comment">;</span>
-<span class="comment">; Export "meadow" from the Map Editor (Export RGBDS) and put meadow.asm next to this file.</span>
+<span class="comment">; Export "meadow" from the Background Editor (Export RGBDS) and put meadow.asm next to this file.</span>
 <span class="comment">; It provides meadow_tiles (the tiles the map uses), meadow_map (one byte per cell, row by row),</span>
 <span class="comment">; and the sizes MEADOW_TILE_COUNT, MEADOW_MAP_WIDTH and MEADOW_MAP_HEIGHT.</span>
 <span class="comment">; Use the direction keys to scroll the background.</span>
@@ -375,6 +375,20 @@ nav.examples-nav a[aria-current="page"] { background: var(--lcd-darkest); color:
 <pre><code>make map/map_viewer.gb       # assemble, link and fix the header
 make run-map/map_viewer      # ...and open it in mGBA</code></pre>
 <p>Use the direction keys to scroll. Things to try: export just the <em>screen</em> area from the editor (set SCX and SCY to choose which part) and run the program again without changing it &mdash; the row-by-row copy handles the smaller map; change <code>rBGP</code> to <code>%00011011</code> for a negative picture; or add a second layer of interest by turning on sprites as in the <a href="/sprite_examples.html">Sprites</a> example.</p>
+</section>
+
+<section id="gbdk">
+<h2>The Same Thing in C with GBDK</h2>
+<p>If you prefer C, <em>Export C</em> writes <code>meadow.h</code> with <code>meadow_tiles</code>, <code>meadow_map</code> and the size constants. With <a href="https://gbdk-2020.github.io/gbdk-2020/" target="_blank">GBDK-2020</a>: (The programs in these examples are the RGBDS ones; the C below follows the GBDK documentation but is not compiled or run by the test script.)</p>
+<pre><code>#include &lt;gb/gb.h&gt;
+#include "meadow.h"
+
+void main(void) {
+    set_bkg_data(0, MEADOW_TILE_COUNT, meadow_tiles);
+    set_bkg_tiles(0, 0, MEADOW_MAP_WIDTH, MEADOW_MAP_HEIGHT, meadow_map);
+    SHOW_BKG;
+    while (1) { scroll_bkg(1, 0); wait_vbl_done(); }   /* SCX += 1 every frame */
+}</code></pre>
 </section>
 
 </body>

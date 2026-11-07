@@ -16,7 +16,9 @@ interface LevelToolbarContentProps {
   onSelectTool: (tool: MapTool) => void;
   tiles: Tile[];
   metatiles: Metatile[];
-  size: number;
+  /** Metatile width and height in tiles */
+  mw: number;
+  mh: number;
   selectedMetatile: number;
   onSelectMetatile: (i: number) => void;
   /** Preset after BGP has been applied (what the canvas shows) */
@@ -67,10 +69,11 @@ const btn = 'w-full px-3 py-2 rounded text-sm bg-gray-700 text-gray-200 hover:bg
 
 export function LevelToolbarContent(props: LevelToolbarContentProps) {
   const {
-    currentTool, onSelectTool, tiles, metatiles, size, selectedMetatile, onSelectMetatile, displayPreset, basePreset,
+    currentTool, onSelectTool, tiles, metatiles, mw, mh, selectedMetatile, onSelectMetatile, displayPreset, basePreset,
     onPresetChange, bgpIndex, onBgpChange, width, height, onResize, scx, scy, onMoveViewport,
   } = props;
-  const max = maxLevelMetatiles(size);
+  const maxW = maxLevelMetatiles(mw);
+  const maxH = maxLevelMetatiles(mh);
 
   return (
     <div className="space-y-4 text-sm">
@@ -94,7 +97,7 @@ export function LevelToolbarContent(props: LevelToolbarContentProps) {
 
       <div>
         <div className="text-xs text-gray-400 mb-1">
-          Metatiles — {selectedMetatile} of {metatiles.length} ({size}×{size} tiles)
+          Metatiles — {selectedMetatile} of {metatiles.length} ({mw}×{mh} tiles)
         </div>
         <MetatilePalette metatiles={metatiles} tiles={tiles} selected={selectedMetatile} onSelect={onSelectMetatile} preset={displayPreset} />
         <button className={`${btn} mt-2`} onClick={props.onImportLibrary}>Import metatiles (.json)</button>
@@ -102,12 +105,12 @@ export function LevelToolbarContent(props: LevelToolbarContentProps) {
 
       <div>
         <div className="text-xs text-gray-400 mb-1">
-          Level size (metatiles, max {max}) — {width * size}×{height * size} tiles
+          Level size (metatiles, max {maxW}×{maxH}) — {width * mw}×{height * mh} tiles
         </div>
         <div className="flex items-center gap-2">
-          <NumberField min={1} max={max} value={width} aria-label="Width in metatiles" onCommit={(n) => onResize(n, height)} className="w-16 bg-gray-700 rounded px-2 py-1" />
+          <NumberField min={1} max={maxW} value={width} aria-label="Width in metatiles" onCommit={(n) => onResize(n, height)} className="w-16 bg-gray-700 rounded px-2 py-1" />
           <span>×</span>
-          <NumberField min={1} max={max} value={height} aria-label="Height in metatiles" onCommit={(n) => onResize(width, n)} className="w-16 bg-gray-700 rounded px-2 py-1" />
+          <NumberField min={1} max={maxH} value={height} aria-label="Height in metatiles" onCommit={(n) => onResize(width, n)} className="w-16 bg-gray-700 rounded px-2 py-1" />
         </div>
       </div>
 

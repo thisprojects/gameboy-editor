@@ -4,7 +4,7 @@ subtitle: From the Music Editor to sound from the Game Boy's four channels
 ---
 <section id="introduction">
 <h2>Introduction</h2>
-<p>The ZX Spectrum 128K plays music on the AY-3-8912 chip; the Game Boy has its own sound chip with four channels. <strong>Pulse 1</strong> and <strong>Pulse 2</strong> make square-like waves with a choice of 4 duty cycles (Pulse 1 can also sweep its pitch up or down). The <strong>Wave</strong> channel plays a 32-sample, 4-bit waveform that you draw. The <strong>Noise</strong> channel makes noise from a shift register, for drums and effects. Volume fades come from a hardware <em>envelope</em> on the pulse and noise channels, so a note starts and fades with no more work for the CPU.</p>
+<p>The Game Boy has a sound chip (the APU) with four channels. <strong>Pulse 1</strong> and <strong>Pulse 2</strong> make square-like waves with a choice of 4 duty cycles (Pulse 1 can also sweep its pitch up or down). The <strong>Wave</strong> channel plays a 32-sample, 4-bit waveform that you draw. The <strong>Noise</strong> channel makes noise from a shift register, for drums and effects. Volume fades come from a hardware <em>envelope</em> on the pulse and noise channels, so a note starts and fades with no more work for the CPU.</p>
 <p>A tracker song is a list of patterns, each a grid of notes by rows. The Music Editor turns every row into the <strong>sound register writes</strong> that produce those notes, and the exported player just replays them, once per frame. The editor's preview uses the same writes, so what you hear is what the console gets. The programs on the other pages, starting with <a href="/tile_examples.html">Tiles</a>, share the <a href="/tile_examples.html#helpers">helper routines</a> explained there.</p>
 </section>
 

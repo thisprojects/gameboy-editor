@@ -113,17 +113,24 @@ describe('TileCanvas', () => {
     expect(props.onStrokeStart).not.toHaveBeenCalled();
   });
 
+  it('a plain wheel (trackpad swipe) pans and does not zoom', () => {
+    const { props, canvas } = setup();
+    fireEvent.wheel(canvas, { deltaX: -50, deltaY: 0 });
+    expect(props.onPixelSizeChange).not.toHaveBeenCalled();
+    expect(canvas.parentElement!.style.transform).toContain('translate(50px');
+  });
+
   it('wheel zooms', () => {
     const { props, canvas } = setup();
-    fireEvent.wheel(canvas, { deltaY: -100 });
+    fireEvent.wheel(canvas, { deltaY: -100, ctrlKey: true });
     expect(props.onPixelSizeChange).toHaveBeenCalledWith(11);
-    fireEvent.wheel(canvas, { deltaY: 100 });
+    fireEvent.wheel(canvas, { deltaY: 100, ctrlKey: true });
     expect(props.onPixelSizeChange).toHaveBeenCalledWith(9);
   });
 
   it('does not zoom below 1', () => {
     const { props, canvas } = setup({ pixelSize: 1 });
-    fireEvent.wheel(canvas, { deltaY: 100 });
+    fireEvent.wheel(canvas, { deltaY: 100, ctrlKey: true });
     expect(props.onPixelSizeChange).not.toHaveBeenCalled();
   });
 
@@ -132,9 +139,9 @@ describe('TileCanvas', () => {
 
     it('draws with the image and scales it on wheel in adjust mode', () => {
       const { props, canvas } = setup({ backgroundImage: img, backgroundAdjustMode: true });
-      fireEvent.wheel(canvas, { deltaY: -100 });
+      fireEvent.wheel(canvas, { deltaY: -100, ctrlKey: true });
       expect(props.onBackgroundScale).toHaveBeenCalledWith(1.1);
-      fireEvent.wheel(canvas, { deltaY: 100 });
+      fireEvent.wheel(canvas, { deltaY: 100, ctrlKey: true });
       expect(props.onBackgroundScale).toHaveBeenCalledWith(0.9);
       expect(props.onPixelSizeChange).not.toHaveBeenCalled();
     });
@@ -153,7 +160,7 @@ describe('TileCanvas', () => {
     ['pencil', 'Click and drag to draw'],
     ['rubber', 'Click and drag to erase (shade 0)'],
     ['bucket', 'Click to flood-fill a region with the current shade'],
-    ['pan', 'Click and drag to pan, scroll to zoom'],
+    ['pan', 'Click and drag to pan; scroll also pans, pinch or Ctrl/Cmd+scroll zooms'],
     ['line', 'Click to set line start point'],
   ])('shows a status for %s', (tool, text) => {
     setup({ currentTool: tool });

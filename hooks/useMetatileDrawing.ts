@@ -3,14 +3,15 @@ import { useHistory } from './useHistory';
 import { Point } from '@/types';
 import { Tile } from '@/types/map';
 import { Metatile, MetatileTool } from '@/types/metatile';
-import { METATILE_SIZES, MAX_METATILES } from '@/constants/level';
+import { MAX_METATILES } from '@/constants/level';
 import { MAX_MAP_TILES } from '@/constants/map';
 import { floodFill } from '@/utils/drawing';
-import { createMetatile, defaultLibrary, resizeMetatile, clampMetatiles } from '@/utils/metatile';
+import { createMetatile, defaultLibrary, resizeMetatile, clampMetatiles, isValidEdge } from '@/utils/metatile';
 
 interface MetatileState {
   metatiles: Metatile[];
-  size: number;
+  mw: number;
+  mh: number;
 }
 
 export function useMetatileDrawing() {
@@ -25,8 +26,8 @@ export function useMetatileDrawing() {
     canRedo,
     historyIndex,
     clearHistory,
-  } = useHistory<MetatileState>({ metatiles: initial.metatiles, size: initial.size });
-  const { metatiles, size } = state;
+  } = useHistory<MetatileState>({ metatiles: initial.metatiles, mw: initial.mw, mh: initial.mh });
+  const { metatiles, mw, mh } = state;
 
   const [tiles, setTilesState] = useState<Tile[]>(initial.tiles);
   const [metaIndex, setMetaIndex] = useState(1);
@@ -131,7 +132,7 @@ export function useMetatileDrawing() {
     [metatiles.length, selectedMetatile, pushHistory, setState]
   );
 
-  const addMetatile = useCallback(() => insertAfterCurrent((prev) => createMetatile(prev.size)), [insertAfterCurrent]);
+  const addMetatile = useCallback(() => insertAfterCurrent((prev) => createMetatile(prev.mw, prev.mh)), [insertAfterCurrent]);
 
   const duplicateMetatile = useCallback(
     () =>
@@ -149,14 +150,14 @@ export function useMetatileDrawing() {
     setMetaIndex(Math.max(0, selectedMetatile - 1));
   }, [metatiles.length, selectedMetatile, pushHistory, setState]);
 
-  /** Change the metatile edge length; content is kept from the top-left of each metatile. */
+  /** Change the metatile width and height (in tiles); content is kept from the top-left of each metatile. */
   const setSize = useCallback(
-    (newSize: number) => {
-      if (!METATILE_SIZES.includes(newSize) || newSize === size) return;
+    (newW: number, newH: number) => {
+      if (!isValidEdge(newW) || !isValidEdge(newH) || (newW === mw && newH === mh)) return;
       pushHistory();
-      setState((prev) => ({ size: newSize, metatiles: prev.metatiles.map((m) => resizeMetatile(m, newSize)) }));
+      setState((prev) => ({ mw: newW, mh: newH, metatiles: prev.metatiles.map((m) => resizeMetatile(m, newW, newH)) }));
     },
-    [size, pushHistory, setState]
+    [mw, mh, pushHistory, setState]
   );
 
   /** Replace the tileset; tile references past the new end are reset to tile 0. */
@@ -172,10 +173,10 @@ export function useMetatileDrawing() {
   );
 
   const loadProjectData = useCallback(
-    (data: { size: number; tiles: Tile[]; metatiles: Metatile[] }) => {
+    (data: { mw: number; mh: number; tiles: Tile[]; metatiles: Metatile[] }) => {
       clearHistory();
       setTilesState(data.tiles);
-      setState({ size: data.size, metatiles: data.metatiles });
+      setState({ mw: data.mw, mh: data.mh, metatiles: data.metatiles });
       setMetaIndex(0);
       setSelectedTile(Math.min(1, data.tiles.length - 1));
     },
@@ -184,7 +185,8 @@ export function useMetatileDrawing() {
 
   return {
     metatiles,
-    size,
+    mw,
+    mh,
     tiles,
     selectedMetatile,
     selectMetatile: setMetaIndex,

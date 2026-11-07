@@ -3,10 +3,11 @@ import { useLevelDrawing } from '@/hooks/useLevelDrawing';
 import { createBlankTile, createSolidTile } from '@/utils/map';
 import { createMetatile } from '@/utils/metatile';
 
-const lib3 = (size = 2) => ({
-  size,
+const lib3 = (mw = 2, mh = mw) => ({
+  mw,
+  mh,
   tiles: [createBlankTile(), createSolidTile(3)],
-  metatiles: [createMetatile(size, 0), createMetatile(size, 1, true), createMetatile(size, 1)],
+  metatiles: [createMetatile(mw, mh, 0), createMetatile(mw, mh, 1, true), createMetatile(mw, mh, 1)],
 });
 
 describe('useLevelDrawing', () => {
@@ -15,7 +16,7 @@ describe('useLevelDrawing', () => {
     expect(result.current.width).toBe(16);
     expect(result.current.height).toBe(16);
     expect(result.current.metatiles).toHaveLength(2);
-    expect(result.current.size).toBe(2);
+    expect([result.current.mw, result.current.mh]).toEqual([2, 2]);
     expect(result.current.selectedMetatile).toBe(1);
   });
 
@@ -115,14 +116,22 @@ describe('useLevelDrawing', () => {
     act(() => result.current.beginStroke({ x: 0, y: 0 }));
     act(() => result.current.endStroke(null));
     expect(result.current.map[0][0]).toBe(2);
-    act(() => result.current.setLibrary({ ...lib3(), metatiles: [createMetatile(2, 0)] }));
+    act(() => result.current.setLibrary({ ...lib3(), metatiles: [createMetatile(2, 2, 0)] }));
     expect(result.current.map[0][0]).toBe(0);
     expect(result.current.selectedMetatile).toBe(0);
     expect(result.current.canUndo).toBe(false);
     act(() => result.current.resizeLevel(100, 100));
     act(() => result.current.setLibrary(lib3(4))); // 4x4 metatiles: max 64
-    expect(result.current.size).toBe(4);
+    expect([result.current.mw, result.current.mh]).toEqual([4, 4]);
     expect(result.current.width).toBe(64);
+    expect(result.current.height).toBe(64);
+    act(() => result.current.setLibrary(lib3(1, 4))); // 1 wide x 4 high: 256 across, 64 down
+    act(() => result.current.resizeLevel(256, 64));
+    expect(result.current.width).toBe(256);
+    expect(result.current.height).toBe(64);
+    act(() => result.current.resizeLevel(257, 64));
+    act(() => result.current.resizeLevel(256, 65));
+    expect(result.current.width).toBe(256);
     expect(result.current.height).toBe(64);
   });
 
@@ -133,7 +142,7 @@ describe('useLevelDrawing', () => {
     expect(result.current.metatiles).toHaveLength(3);
     expect(result.current.selectedMetatile).toBe(1);
     expect(result.current.canUndo).toBe(false);
-    act(() => result.current.loadProjectData({ map: [[0]], library: { ...lib3(), metatiles: [createMetatile(2)] } }));
+    act(() => result.current.loadProjectData({ map: [[0]], library: { ...lib3(), metatiles: [createMetatile(2, 2)] } }));
     expect(result.current.selectedMetatile).toBe(0);
   });
 

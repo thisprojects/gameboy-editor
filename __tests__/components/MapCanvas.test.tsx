@@ -80,15 +80,15 @@ describe('MapCanvas', () => {
 
   it('wheel zooms within 1..8', () => {
     const { props, canvas } = setup({ zoom: 3 });
-    fireEvent.wheel(canvas, { deltaY: -100 });
+    fireEvent.wheel(canvas, { deltaY: -100, ctrlKey: true });
     expect(props.onZoomChange).toHaveBeenCalledWith(4);
-    fireEvent.wheel(canvas, { deltaY: 100 });
+    fireEvent.wheel(canvas, { deltaY: 100, ctrlKey: true });
     expect(props.onZoomChange).toHaveBeenCalledWith(2);
   });
 
   it('does not zoom past the limits', () => {
     const { props, canvas } = setup({ zoom: 1 });
-    fireEvent.wheel(canvas, { deltaY: 100 });
+    fireEvent.wheel(canvas, { deltaY: 100, ctrlKey: true });
     expect(props.onZoomChange).not.toHaveBeenCalled();
   });
 
@@ -108,7 +108,7 @@ describe('MapCanvas', () => {
     ['fill', 'Click to flood-fill matching tiles'],
     ['pick', 'Click a map cell to pick its tile'],
     ['rubber', 'Click and drag to erase (tile 0)'],
-    ['pan', 'Click and drag to pan, scroll to zoom'],
+    ['pan', 'Click and drag to pan; scroll also pans, pinch or Ctrl/Cmd+scroll zooms'],
   ])('shows a status for %s', (tool, text) => {
     setup({ currentTool: tool });
     expect(screen.getByText(text)).toBeInTheDocument();

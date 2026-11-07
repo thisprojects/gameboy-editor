@@ -7,7 +7,7 @@ import { exportMapRGBDS } from '@/utils/mapExport';
 import { encodeGlyphs } from '@/utils/font';
 import { exportFontRGBDS } from '@/utils/fontExport';
 import { exportLevelRGBDS, exportMetatilesRGBDS } from '@/utils/levelExport';
-import { maxTileIndex } from '@/utils/metatile';
+import { maxTileIndex, readDims } from '@/utils/metatile';
 import { exportMusicRGBDS } from '@/utils/musicExport';
 
 /**
@@ -37,19 +37,25 @@ export function exportProjectRGBDS(project: any, name: string): string | null {
     }
     case 'font':
       return exportFontRGBDS(name, encodeGlyphs(project.glyphs));
-    case 'metatiles':
+    case 'metatiles': {
+      const dims = readDims(project);
+      if (!dims) return null;
       return exportMetatilesRGBDS(name, {
-        size: project.size,
+        ...dims,
         metatiles: project.metatiles,
         tileData: encodeTiles(project.tiles.slice(0, maxTileIndex(project.metatiles) + 1)),
       });
-    case 'level':
+    }
+    case 'level': {
+      const dims = readDims(project);
+      if (!dims) return null;
       return exportLevelRGBDS(name, {
-        size: project.size,
+        ...dims,
         metatiles: project.metatiles,
         map: project.map,
         tileData: encodeTiles(project.tiles.slice(0, maxTileIndex(project.metatiles) + 1)),
       });
+    }
     case 'music':
       return exportMusicRGBDS(name, project);
     default:

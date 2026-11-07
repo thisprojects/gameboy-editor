@@ -60,7 +60,7 @@ suite('RGBDS exports assemble and link', () => {
 
   const tiles = [createBlankTile(), createSolidTile(3), createSolidTile(1)];
   const tileData = encodeTiles(tiles);
-  const metatiles = [createMetatile(2, 0), createMetatile(2, 1, true)];
+  const metatiles = [createMetatile(2, 2, 0), createMetatile(2, 2, 1, true)];
 
   it('tiles', () => {
     const px = createEmptyPixels(16, 8);
@@ -77,8 +77,8 @@ suite('RGBDS exports assemble and link', () => {
 
   it('map', () => check('map', exportMapRGBDS('level 1', { map: [[0, 1], [1, 2]], tileData })));
   it('font', () => check('font', exportFontRGBDS('font', encodeGlyphs(starterGlyphs()))));
-  it('metatiles', () => check('metatiles', exportMetatilesRGBDS('set', { tileData, metatiles, size: 2 })));
-  it('level', () => check('lvl', exportLevelRGBDS('lvl', { tileData, metatiles, size: 2, map: [[0, 1, 1], [1, 0, 0]] })));
+  it('metatiles', () => check('metatiles', exportMetatilesRGBDS('set', { tileData, metatiles, mw: 2, mh: 2 })));
+  it('level', () => check('lvl', exportLevelRGBDS('lvl', { tileData, metatiles, mw: 2, mh: 2, map: [[0, 1, 1], [1, 0, 0]] })));
   it('music', () => check('song', exportMusicRGBDS('song', sampleSong())));
   it('music with a single pattern and one order entry', () => {
     const s = sampleSong();

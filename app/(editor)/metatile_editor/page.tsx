@@ -43,7 +43,8 @@ export default function MetatileEditorPage() {
     projectInputRef, tilesetInputRef, saveProject, exportASM, exportC, export2bpp,
     loadProject, importTileset, triggerLoadDialog, triggerTilesetDialog,
   } = useMetatileProject({
-    size: drawing.size,
+    mw: drawing.mw,
+    mh: drawing.mh,
     tiles: drawing.tiles,
     metatiles: drawing.metatiles,
     fileName,
@@ -61,8 +62,8 @@ export default function MetatileEditorPage() {
   const grid = drawing.current.tiles;
 
   const renderCell = useCallback(
-    (ctx: CanvasRenderingContext2D, x: number, y: number, px: number, py: number, size: number) => {
-      ctx.drawImage(tileCanvases[grid[y][x]] ?? tileCanvases[0], px, py, size, size);
+    (ctx: CanvasRenderingContext2D, x: number, y: number, px: number, py: number, w: number, h: number) => {
+      ctx.drawImage(tileCanvases[grid[y][x]] ?? tileCanvases[0], px, py, w, h);
     },
     [tileCanvases, grid]
   );
@@ -86,7 +87,7 @@ export default function MetatileEditorPage() {
         onToggle={() => setToolbarOpen(!toolbarOpen)}
         title="Metatile Editor"
         infoId="metatile-editor-info"
-        infoDescription="Build 2x2 or 4x4 metatiles from tiles. Metatiles are the building blocks of the Level Editor."
+        infoDescription="Build metatiles of any width and height (2x2, 4x4, 1x4...) from tiles. Metatiles are the building blocks of the Level Editor."
       >
         <MetatileToolbarContent
           currentTool={drawing.currentTool}
@@ -97,7 +98,8 @@ export default function MetatileEditorPage() {
           metatiles={drawing.metatiles}
           selectedMetatile={drawing.selectedMetatile}
           onSelectMetatile={drawing.selectMetatile}
-          size={drawing.size}
+          mw={drawing.mw}
+          mh={drawing.mh}
           onSizeChange={drawing.setSize}
           solid={drawing.current.solid}
           onToggleSolid={drawing.toggleSolid}
@@ -131,8 +133,8 @@ export default function MetatileEditorPage() {
       <div className={`min-h-screen transition-all duration-300 ${toolbarOpen ? 'ml-[220px]' : 'ml-0'}`}>
         <CellGridCanvas
           testId="metatile-canvas"
-          cols={drawing.size}
-          rows={drawing.size}
+          cols={drawing.mw}
+          rows={drawing.mh}
           cellSize={TILE_SIZE * zoom}
           renderCell={renderCell}
           showGrid={showGrid}

@@ -8,7 +8,7 @@ describe('useMetatileDrawing', () => {
 
   it('starts with the default 2x2 library and the solid metatile selected', () => {
     const { result } = renderHook(() => useMetatileDrawing());
-    expect(result.current.size).toBe(2);
+    expect([result.current.mw, result.current.mh]).toEqual([2, 2]);
     expect(result.current.metatiles).toHaveLength(2);
     expect(result.current.selectedMetatile).toBe(1);
     expect(result.current.current.solid).toBe(true);
@@ -88,15 +88,30 @@ describe('useMetatileDrawing', () => {
 
   it('changes size keeping content, ignoring invalid or unchanged sizes', () => {
     const { result } = renderHook(() => useMetatileDrawing());
-    act(() => result.current.setSize(4));
-    expect(result.current.size).toBe(4);
+    act(() => result.current.setSize(4, 4));
+    expect([result.current.mw, result.current.mh]).toEqual([4, 4]);
     expect(result.current.current.tiles).toHaveLength(4);
     expect(result.current.current.tiles[0]).toEqual([1, 1, 0, 0]);
-    act(() => result.current.setSize(3));
-    act(() => result.current.setSize(4));
-    expect(result.current.size).toBe(4);
+    act(() => result.current.setSize(0, 4));
+    act(() => result.current.setSize(17, 4));
+    act(() => result.current.setSize(2.5, 4));
+    act(() => result.current.setSize(4, 4));
+    expect([result.current.mw, result.current.mh]).toEqual([4, 4]);
     act(() => result.current.undo());
-    expect(result.current.size).toBe(2);
+    expect([result.current.mw, result.current.mh]).toEqual([2, 2]);
+  });
+
+  it('allows any width x height, e.g. a 1x4 floor, and new metatiles use it', () => {
+    const { result } = renderHook(() => useMetatileDrawing());
+    act(() => result.current.setSize(1, 4));
+    expect([result.current.mw, result.current.mh]).toEqual([1, 4]);
+    expect(result.current.current.tiles).toHaveLength(4);
+    expect(result.current.current.tiles[0]).toHaveLength(1);
+    act(() => result.current.addMetatile());
+    expect(result.current.current.tiles).toHaveLength(4);
+    expect(result.current.current.tiles.every((r) => r.length === 1)).toBe(true);
+    act(() => result.current.setSize(16, 16));
+    expect(result.current.current.tiles).toHaveLength(16);
   });
 
   it('replaces the tileset, resetting dangling references', () => {
@@ -121,8 +136,8 @@ describe('useMetatileDrawing', () => {
 
   it('loads project data and clamps the metatile selection after undo', () => {
     const { result } = renderHook(() => useMetatileDrawing());
-    act(() => result.current.loadProjectData({ size: 4, tiles: [createBlankTile()], metatiles: [createMetatile(4)] }));
-    expect(result.current.size).toBe(4);
+    act(() => result.current.loadProjectData({ mw: 4, mh: 2, tiles: [createBlankTile()], metatiles: [createMetatile(4, 2)] }));
+    expect([result.current.mw, result.current.mh]).toEqual([4, 2]);
     expect(result.current.selectedMetatile).toBe(0);
     expect(result.current.selectedTile).toBe(0);
     expect(result.current.canUndo).toBe(false);

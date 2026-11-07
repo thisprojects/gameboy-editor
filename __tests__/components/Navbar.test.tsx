@@ -11,7 +11,7 @@ describe('Navbar', () => {
     render(<Navbar />);
     expect(screen.getAllByRole('link')).toHaveLength(8);
     expect(screen.getByText('Tile Editor').className).toContain('bg-blue-600');
-    expect(screen.getByText('Map Editor').className).not.toContain('bg-blue-600');
+    expect(screen.getByText('Background Editor').className).not.toContain('bg-blue-600');
   });
 
   describe('Documentation menu', () => {
@@ -70,7 +70,7 @@ describe('docItems', () => {
   it('start with the book, then one example per editor', () => {
     expect(docItems[0].href).toBe('/gameboy_book.html');
     expect(docItems.slice(1).map((d) => d.href)).toEqual([
-      '/tile_examples.html', '/sprite_examples.html', '/map_examples.html', '/font_examples.html', '/level_examples.html', '/music_examples.html',
+      '/tile_examples.html', '/sprite_examples.html', '/background_examples.html', '/font_examples.html', '/level_examples.html', '/music_examples.html',
     ]);
   });
 });

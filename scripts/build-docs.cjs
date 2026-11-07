@@ -30,7 +30,7 @@ const STYLE = fs.readFileSync(path.join(ROOT, 'docs', 'style.css'), 'utf-8');
 const PAGES = [
   { file: 'tile_examples.html', label: 'Tiles' },
   { file: 'sprite_examples.html', label: 'Sprites' },
-  { file: 'map_examples.html', label: 'Map' },
+  { file: 'background_examples.html', label: 'Background' },
   { file: 'font_examples.html', label: 'Font' },
   { file: 'level_examples.html', label: 'Level' },
   { file: 'music_examples.html', label: 'Music' },

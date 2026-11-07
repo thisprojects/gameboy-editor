@@ -22,10 +22,9 @@ export function renderTileCanvas(tile: Tile, preset: PalettePreset): HTMLCanvasE
   return canvas;
 }
 
-/** Render a metatile (grid of tile indices) to an offscreen canvas of (size*8)^2 pixels. */
+/** Render a metatile (grid of tile indices) to an offscreen canvas of (width*8) x (height*8) pixels. */
 export function renderMetatileCanvas(grid: number[][], tiles: Tile[], preset: PalettePreset): HTMLCanvasElement {
-  const size = grid.length;
-  const canvas = makeCanvas(size * TILE_SIZE, size * TILE_SIZE);
+  const canvas = makeCanvas((grid[0]?.length ?? 1) * TILE_SIZE, grid.length * TILE_SIZE);
   const ctx = canvas.getContext('2d');
   if (!ctx) return canvas;
   grid.forEach((row, ty) =>

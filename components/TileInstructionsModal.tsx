@@ -28,13 +28,20 @@ export function TileInstructionsModal({ isOpen, onClose }: TileInstructionsModal
           </button>
         </div>
         <div className="overflow-y-auto p-5 space-y-5 text-sm text-gray-300">
+          <section className="rounded-md bg-gray-900/60 border border-gray-700 p-3">
+            <h3 className="text-base font-semibold text-white mb-1">What you would make with this</h3>
+            <p className="text-white mb-1">Draw the little pictures everything else is built from.</p>
+            <p>
+              Think of this as your art box. You draw small 8×8 pixel squares (<strong className="text-white">tiles</strong>) in four shades: a patch of grass, a brick, a face, the corner of a window, a letter. A whole game&apos;s artwork is a collection of these. Save the set and the Background and Metatile editors can import it (the Level Editor gets it through the metatiles). The Sprite Editor is separate: you draw sprites directly in it.
+            </p>
+          </section>
           <section>
             <h3 className="text-base font-semibold text-white mb-2">What are tiles?</h3>
             <p>
               The Game Boy draws everything from <strong className="text-white">8×8 pixel tiles</strong> with{' '}
               <strong className="text-white">4 shades</strong> (2 bits per pixel). Backgrounds and sprites both
-              reference tiles stored in VRAM, which holds up to <strong className="text-white">384</strong>. Unlike the
-              ZX Spectrum there is no colour clash — every pixel can use any of the 4 shades.
+              reference tiles stored in VRAM, which holds up to <strong className="text-white">384</strong>. Every pixel can use any of the 4 shades;
+              the palette registers (BGP, OBP0, OBP1) decide which grey each shade shows.
             </p>
           </section>
           <section>

@@ -8,7 +8,7 @@ import { exportFile, examplePath, readExample, loadProject } from './helpers';
 const EDITORS = [
   { route: '/tile_editor', dir: 'tiles', name: 'forest', suffix: 'tiles' },
   { route: '/sprite_editor', dir: 'sprite', name: 'hero', suffix: 'sprite' },
-  { route: '/map_editor', dir: 'map', name: 'meadow', suffix: 'map' },
+  { route: '/background_editor', dir: 'map', name: 'meadow', suffix: 'map' },
   { route: '/font_editor', dir: 'font', name: 'gbfont', suffix: 'font' },
   { route: '/level_editor', dir: 'level', name: 'cave', suffix: 'level' },
   { route: '/music_editor', dir: 'music', name: 'song', suffix: 'music' },
@@ -86,7 +86,7 @@ test.describe('loading bad files', () => {
   const BAD = [
     { route: '/tile_editor', file: 'sprite/hero_sprite.json', alert: /not a Game Boy tileset project/ },
     { route: '/sprite_editor', file: 'tiles/forest_tiles.json', alert: /not a Game Boy sprite project/ },
-    { route: '/map_editor', file: 'font/gbfont_font.json', alert: /not a Game Boy map project/ },
+    { route: '/background_editor', file: 'font/gbfont_font.json', alert: /not a Game Boy map project/ },
     { route: '/font_editor', file: 'map/meadow_map.json', alert: /not a Game Boy font project/ },
     { route: '/level_editor', file: 'music/song_music.json', alert: /not a Game Boy level project/ },
     { route: '/music_editor', file: 'level/cave_level.json', alert: /not a Game Boy music project/ },

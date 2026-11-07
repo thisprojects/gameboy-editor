@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import MapEditorPage from '@/app/(editor)/map_editor/page';
+import MapEditorPage from '@/app/(editor)/background_editor/page';
 import { downloadBlob } from '@/utils/download';
 
 jest.mock('@/utils/download', () => ({ downloadBlob: jest.fn() }));
@@ -11,7 +11,7 @@ function paint(cx = 1, cy = 1) {
   fireEvent.mouseUp(canvas, { clientX: cx * 24 + 4, clientY: cy * 24 + 4 });
 }
 
-describe('Map editor page', () => {
+describe('Background editor page', () => {
   beforeEach(() => {
     localStorage.clear();
     localStorage.setItem('mapEditor_hideInstructions', 'true');
@@ -21,13 +21,13 @@ describe('Map editor page', () => {
   it('shows instructions on first visit and remembers dismissal', () => {
     localStorage.clear();
     const { unmount } = render(<MapEditorPage />);
-    expect(screen.getByText('Map Editor — How to Use')).toBeInTheDocument();
+    expect(screen.getByText('Background Editor — How to Use')).toBeInTheDocument();
     fireEvent.click(screen.getByLabelText(/Don't show this again/));
     fireEvent.click(screen.getByText('Got it'));
-    expect(screen.queryByText('Map Editor — How to Use')).not.toBeInTheDocument();
+    expect(screen.queryByText('Background Editor — How to Use')).not.toBeInTheDocument();
     unmount();
     render(<MapEditorPage />);
-    expect(screen.queryByText('Map Editor — How to Use')).not.toBeInTheDocument();
+    expect(screen.queryByText('Background Editor — How to Use')).not.toBeInTheDocument();
   });
 
   it.each([

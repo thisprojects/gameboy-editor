@@ -64,8 +64,8 @@ export default function MapEditorPage() {
       <EditorToolbar
         isOpen={toolbarOpen}
         onToggle={() => setToolbarOpen(!toolbarOpen)}
-        title="Map Editor"
-        infoId="map-editor-info"
+        title="Background Editor"
+        infoId="background-editor-info"
         infoDescription="Paint the Game Boy's 32x32 background tile map. The screen shows a 20x18 tile window that scrolls with SCX/SCY."
       >
         <MapToolbarContent
@@ -137,9 +137,9 @@ export default function MapEditorPage() {
         onConfirm={handleModalConfirm}
         onCancel={() => setModalAction(null)}
         docsLink={{
-          href: '/map_examples.html',
+          href: '/background_examples.html',
           description:
-            'the Map example copies the exported tile map into the background map and scrolls it.',
+            'the Background example copies the exported tile map into the background map and scrolls it.',
         }}
       />
 

@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useCallback, useState } from 'react';
 import { Tool, Point } from '@/types';
+import { isZoomWheel, zoomStep } from '@/utils/wheel';
 import { TILE_SIZE, PalettePreset } from '@/constants';
 import { getLinePoints } from '@/utils/drawing';
 
@@ -80,6 +81,7 @@ export function TileCanvas({
   const initialBackgroundPos = useRef({ x: 0, y: 0 });
 
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const wheelAcc = useRef(0);
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
 
@@ -189,8 +191,13 @@ export function TileCanvas({
         onBackgroundScale(Math.max(0.1, Math.min(5, backgroundScale + (e.deltaY > 0 ? -0.1 : 0.1))));
         return;
       }
-      const newSize = Math.max(1, pixelSize + (e.deltaY > 0 ? -1 : 1));
-      if (newSize !== pixelSize) onPixelSizeChange(newSize);
+      if (!isZoomWheel(e)) {
+        setPanOffset((o) => ({ x: o.x - e.deltaX, y: o.y - e.deltaY }));
+        return;
+      }
+      const step = zoomStep(wheelAcc, e.deltaY);
+      const newSize = Math.max(1, pixelSize + step);
+      if (step && newSize !== pixelSize) onPixelSizeChange(newSize);
     };
     container.addEventListener('wheel', handleWheel, { passive: false });
     return () => container.removeEventListener('wheel', handleWheel);
@@ -283,7 +290,7 @@ export function TileCanvas({
   const statusMessage = (() => {
     if (backgroundAdjustMode && tracing) return 'Drag to move image, scroll to scale';
     switch (currentTool) {
-      case 'pan': return 'Click and drag to pan, scroll to zoom';
+      case 'pan': return 'Click and drag to pan; scroll also pans, pinch or Ctrl/Cmd+scroll zooms';
       case 'line': return lineStart ? 'Click to set line end point' : 'Click to set line start point';
       case 'pencil': return 'Click and drag to draw';
       case 'bucket': return 'Click to flood-fill a region with the current shade';
@@ -321,7 +328,7 @@ export function TileCanvas({
           </div>
           <div className="mt-2 text-sm text-gray-400 text-center">
             <p>{statusMessage}</p>
-            <p className="text-xs text-gray-500 mt-1">Right-click drag to pan • Scroll to zoom</p>
+            <p className="text-xs text-gray-500 mt-1">Scroll or right-click drag to pan • Pinch or Ctrl/Cmd+scroll to zoom</p>
           </div>
         </div>
       </div>

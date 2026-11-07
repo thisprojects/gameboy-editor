@@ -5,7 +5,8 @@ import { Tile } from '@/types/map';
 import { Metatile, MetatileTool } from '@/types/metatile';
 import { BsBrushFill, BsEraserFill, BsPaintBucket, BsEyedropper } from 'react-icons/bs';
 import { PALETTE_PRESETS, PalettePreset } from '@/constants';
-import { METATILE_SIZES, MAX_METATILES } from '@/constants/level';
+import { MAX_METATILES, MAX_METATILE_EDGE } from '@/constants/level';
+import { NumberField } from './NumberField';
 import { TilePalette } from './TilePalette';
 import { MetatilePalette } from './MetatilePalette';
 import { UndoRedoButtons } from './UndoRedoButtons';
@@ -19,8 +20,10 @@ interface MetatileToolbarContentProps {
   metatiles: Metatile[];
   selectedMetatile: number;
   onSelectMetatile: (i: number) => void;
-  size: number;
-  onSizeChange: (size: number) => void;
+  /** Metatile width and height in tiles */
+  mw: number;
+  mh: number;
+  onSizeChange: (width: number, height: number) => void;
   solid: boolean;
   onToggleSolid: () => void;
   onAddMetatile: () => void;
@@ -57,7 +60,7 @@ const btn = 'w-full px-3 py-2 rounded text-sm bg-gray-700 text-gray-200 hover:bg
 const small = 'flex-1 px-2 py-1 rounded text-xs bg-gray-700 text-gray-200 hover:bg-gray-600 disabled:opacity-40';
 
 export function MetatileToolbarContent(props: MetatileToolbarContentProps) {
-  const { currentTool, onSelectTool, tiles, selectedTile, onSelectTile, metatiles, selectedMetatile, onSelectMetatile, size, preset } = props;
+  const { currentTool, onSelectTool, tiles, selectedTile, onSelectTile, metatiles, selectedMetatile, onSelectMetatile, mw, mh, preset } = props;
 
   return (
     <div className="space-y-4 text-sm">
@@ -86,17 +89,15 @@ export function MetatileToolbarContent(props: MetatileToolbarContentProps) {
       </div>
 
       <div>
-        <label className="block text-xs text-gray-400 mb-1" htmlFor="meta-size">Metatile size</label>
-        <select
-          id="meta-size"
-          value={size}
-          onChange={(e) => props.onSizeChange(Number(e.target.value))}
-          className="w-full bg-gray-700 rounded px-2 py-1"
-        >
-          {METATILE_SIZES.map((s) => (
-            <option key={s} value={s}>{s}×{s} tiles ({s * 8}×{s * 8} px)</option>
-          ))}
-        </select>
+        <div className="text-xs text-gray-400 mb-1">
+          Metatile size (tiles, 1–{MAX_METATILE_EDGE}) — {mw * 8}×{mh * 8} px
+        </div>
+        <div className="flex items-center gap-2">
+          <NumberField min={1} max={MAX_METATILE_EDGE} value={mw} aria-label="Metatile width in tiles" onCommit={(n) => props.onSizeChange(n, mh)} className="w-16 bg-gray-700 rounded px-2 py-1" />
+          <span>×</span>
+          <NumberField min={1} max={MAX_METATILE_EDGE} value={mh} aria-label="Metatile height in tiles" onCommit={(n) => props.onSizeChange(mw, n)} className="w-16 bg-gray-700 rounded px-2 py-1" />
+        </div>
+        <p className="text-xs text-gray-500 mt-1">Any width × height, e.g. 1×4 for a long floor. Every metatile in the library shares it.</p>
       </div>
 
       <div>
@@ -105,9 +106,9 @@ export function MetatileToolbarContent(props: MetatileToolbarContentProps) {
         </div>
         <MetatilePalette metatiles={metatiles} tiles={tiles} selected={selectedMetatile} onSelect={onSelectMetatile} preset={preset} />
         <div className="flex gap-1 mt-2">
-          <button className={small} onClick={props.onAddMetatile}>Add</button>
-          <button className={small} onClick={props.onDuplicateMetatile}>Duplicate</button>
-          <button className={small} onClick={props.onDeleteMetatile} disabled={metatiles.length <= 1}>Delete</button>
+          <button className={small} data-tip="Add a new empty metatile to the library" onClick={props.onAddMetatile}>Add</button>
+          <button className={small} data-tip="Copy the selected metatile into a new one" onClick={props.onDuplicateMetatile}>Duplicate</button>
+          <button className={small} data-tip="Delete the selected metatile" onClick={props.onDeleteMetatile} disabled={metatiles.length <= 1}>Delete</button>
         </div>
         <button className={`${btn} mt-1`} onClick={props.onClearMetatile}>Clear metatile</button>
         <label className="flex items-center gap-2 mt-2 text-gray-300">

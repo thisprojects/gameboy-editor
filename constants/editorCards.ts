@@ -39,13 +39,13 @@ export const EDITOR_CARDS: Record<string, EditorCard> = {
     accent: '#34d399',
     art: ['....####....', '...######...', '...#oooo#...', '...#o##o#...', '...#oooo#...', '....####....', '..##oooo##..', '.#o#oooo#o#.', '.#o#oooo#o#.', '...#o##o#...', '...#o..o#...', '..###..###..'],
   },
-  '/map_editor': {
-    description: 'Paint the 32×32 background map and see the 20×18 screen scroll over it.',
+  '/background_editor': {
+    description: 'Paint the background layer: title screens, menus and single-screen scenes, with the 20×18 screen shown scrolling over it.',
     accent: '#22d3ee',
     art: compose([tree, water, path, grass], [[0, 0, 3], [1, 2, 3], [1, 2, 0]]),
   },
   '/metatile_editor': {
-    description: 'Build 2×2 and 4×4 blocks out of tiles, with collision flags.',
+    description: 'Build blocks of any shape out of tiles (2×2, 1×4 floors...), with collision flags.',
     accent: '#818cf8',
     art: compose([rock, plain, checker, bush], [[0, 1], [2, 3]]),
   },

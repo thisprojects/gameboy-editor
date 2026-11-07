@@ -1,25 +1,48 @@
 import { Metatile } from '@/types/metatile';
 import { Tile } from '@/types/map';
-import { METATILE_SIZES, MAX_METATILES, maxLevelMetatiles } from '@/constants/level';
+import { MAX_METATILES, MAX_METATILE_EDGE, DEFAULT_METATILE_EDGE, maxLevelMetatiles } from '@/constants/level';
 import { createBlankTile, createSolidTile, isValidTileset } from '@/utils/map';
 import { resizeGrid } from '@/utils/grid';
 
-export function createMetatile(size: number, fill = 0, solid = false): Metatile {
-  return { tiles: resizeGrid([], size, size, fill), solid };
+/** Metatile dimensions in tiles. */
+export interface MetaDims {
+  mw: number;
+  mh: number;
+}
+
+export const isValidEdge = (n: unknown): n is number => Number.isInteger(n) && (n as number) >= 1 && (n as number) <= MAX_METATILE_EDGE;
+
+/** Read the dimensions from a project file: `size` (square) or `metatileWidth` + `metatileHeight`. Null if invalid. */
+export function readDims(d: { size?: unknown; metatileWidth?: unknown; metatileHeight?: unknown } | null | undefined): MetaDims | null {
+  if (!d) return null;
+  if (d.metatileWidth !== undefined || d.metatileHeight !== undefined) {
+    return isValidEdge(d.metatileWidth) && isValidEdge(d.metatileHeight) ? { mw: d.metatileWidth, mh: d.metatileHeight } : null;
+  }
+  return isValidEdge(d.size) ? { mw: d.size, mh: d.size } : null;
+}
+
+/** The project-file fields for these dimensions (`size` when square, so square files look as they always did). */
+export const dimsFields = ({ mw, mh }: MetaDims): { size: number } | { metatileWidth: number; metatileHeight: number } =>
+  mw === mh ? { size: mw } : { metatileWidth: mw, metatileHeight: mh };
+
+export function createMetatile(mw: number, mh: number, fill = 0, solid = false): Metatile {
+  return { tiles: resizeGrid([], mw, mh, fill), solid };
 }
 
 /** A starter library: an empty metatile and a solid one. */
-export function defaultLibrary(): { size: number; tiles: Tile[]; metatiles: Metatile[] } {
+export function defaultLibrary(): MetaDims & { tiles: Tile[]; metatiles: Metatile[] } {
+  const e = DEFAULT_METATILE_EDGE;
   return {
-    size: 2,
+    mw: e,
+    mh: e,
     tiles: [createBlankTile(), createSolidTile(3)],
-    metatiles: [createMetatile(2, 0), createMetatile(2, 1, true)],
+    metatiles: [createMetatile(e, e, 0), createMetatile(e, e, 1, true)],
   };
 }
 
-export const resizeMetatile = (m: Metatile, size: number): Metatile => ({
+export const resizeMetatile = (m: Metatile, mw: number, mh: number): Metatile => ({
   ...m,
-  tiles: resizeGrid(m.tiles, size, size, 0),
+  tiles: resizeGrid(m.tiles, mw, mh, 0),
 });
 
 /** Replace tile references that no longer exist with tile 0. */
@@ -30,33 +53,35 @@ export function clampMetatiles(metatiles: Metatile[], tileCount: number): Metati
   }));
 }
 
-export function isValidLibrary(size: unknown, tiles: unknown, metatiles: unknown): boolean {
-  if (typeof size !== 'number' || !METATILE_SIZES.includes(size) || !isValidTileset(tiles)) return false;
+export function isValidLibrary(dims: MetaDims | null, tiles: unknown, metatiles: unknown): boolean {
+  if (!dims || !isValidTileset(tiles)) return false;
+  const { mw, mh } = dims;
   if (!Array.isArray(metatiles) || metatiles.length < 1 || metatiles.length > MAX_METATILES) return false;
   return metatiles.every(
     (m) =>
       typeof m?.solid === 'boolean' &&
       Array.isArray(m.tiles) &&
-      m.tiles.length === size &&
+      m.tiles.length === mh &&
       m.tiles.every(
         (row: unknown) =>
-          Array.isArray(row) && row.length === size && row.every((t) => Number.isInteger(t) && t >= 0 && t < tiles.length)
+          Array.isArray(row) && row.length === mw && row.every((t) => Number.isInteger(t) && t >= 0 && t < tiles.length)
       )
   );
 }
 
-export function isValidLevelMap(map: unknown, size: number, metatileCount: number): map is number[][] {
-  const max = maxLevelMetatiles(size);
-  if (!Array.isArray(map) || map.length < 1 || map.length > max || !Array.isArray(map[0])) return false;
+export function isValidLevelMap(map: unknown, { mw, mh }: MetaDims, metatileCount: number): map is number[][] {
+  const maxW = maxLevelMetatiles(mw);
+  const maxH = maxLevelMetatiles(mh);
+  if (!Array.isArray(map) || map.length < 1 || map.length > maxH || !Array.isArray(map[0])) return false;
   const width = map[0].length;
   return (
     width >= 1 &&
-    width <= max &&
+    width <= maxW &&
     map.every((row) => Array.isArray(row) && row.length === width && row.every((t) => Number.isInteger(t) && t >= 0 && t < metatileCount))
   );
 }
 
-/** Metatile table: size*size tile indices per metatile, row-major. */
+/** Metatile table: width*height tile indices per metatile, row-major. */
 export const metatileBytes = (metatiles: Metatile[]): Uint8Array => Uint8Array.from(metatiles.flatMap((m) => m.tiles.flat()));
 
 export const collisionBytes = (metatiles: Metatile[]): Uint8Array => Uint8Array.from(metatiles.map((m) => (m.solid ? 1 : 0)));
@@ -65,11 +90,11 @@ export const collisionBytes = (metatiles: Metatile[]): Uint8Array => Uint8Array.
 export const maxTileIndex = (metatiles: Metatile[]): number =>
   metatiles.reduce((max, m) => Math.max(max, ...m.tiles.flat()), 0);
 
-/** Expand a metatile map to a plain tile index map (width*size x height*size). */
-export function expandMap(map: number[][], metatiles: Metatile[], size: number): number[][] {
+/** Expand a metatile map to a plain tile index map (level width * metatile width x level height * metatile height). */
+export function expandMap(map: number[][], metatiles: Metatile[], mh: number): number[][] {
   const out: number[][] = [];
   for (const row of map) {
-    for (let ty = 0; ty < size; ty++) {
+    for (let ty = 0; ty < mh; ty++) {
       out.push(row.flatMap((idx) => metatiles[idx].tiles[ty]));
     }
   }

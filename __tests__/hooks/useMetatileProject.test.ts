@@ -7,14 +7,14 @@ import { createMetatile } from '@/utils/metatile';
 jest.mock('@/utils/download', () => ({ downloadBlob: jest.fn() }));
 
 const tiles = [createBlankTile(), createSolidTile(3), createSolidTile(2)];
-const metatiles = [createMetatile(2, 0), createMetatile(2, 1, true)];
+const metatiles = [createMetatile(2, 2, 0), createMetatile(2, 2, 1, true)];
 
 function setup() {
   const loadProjectData = jest.fn();
   const setFileName = jest.fn();
   const setTileset = jest.fn();
   const hook = renderHook(() =>
-    useMetatileProject({ size: 2, tiles, metatiles, fileName: 'set', setFileName, loadProjectData, setTileset })
+    useMetatileProject({ mw: 2, mh: 2, tiles, metatiles, fileName: 'set', setFileName, loadProjectData, setTileset })
   );
   return { ...hook, loadProjectData, setFileName, setTileset };
 }
@@ -58,7 +58,7 @@ describe('useMetatileProject', () => {
     mockReader(JSON.stringify(project()));
     const { result, loadProjectData, setFileName } = setup();
     act(() => result.current.loadProject(changeEvent(new File(['x'], 'cave_metatiles.json'))));
-    expect(loadProjectData).toHaveBeenCalledWith(expect.objectContaining({ size: 2 }));
+    expect(loadProjectData).toHaveBeenCalledWith(expect.objectContaining({ mw: 2, mh: 2 }));
     expect(setFileName).toHaveBeenCalledWith('cave');
   });
 

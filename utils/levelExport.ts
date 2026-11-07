@@ -7,7 +7,9 @@ export interface MetatileExportInput {
   /** Raw 2bpp data for tiles 0..N-1 */
   tileData: Uint8Array;
   metatiles: Metatile[];
-  size: number;
+  /** Metatile width and height in tiles */
+  mw: number;
+  mh: number;
 }
 
 export interface LevelExportInput extends MetatileExportInput {
@@ -19,12 +21,12 @@ const hex = (b: number) => b.toString(16).toUpperCase().padStart(2, '0');
 const tileBytes = (data: Uint8Array, t: number) => data.slice(t * BYTES_PER_TILE, (t + 1) * BYTES_PER_TILE);
 
 /** RGBDS lines for tiles, metatile table and collision table. */
-function rgbdsLibrary(id: string, { tileData, metatiles, size }: MetatileExportInput): string[] {
+function rgbdsLibrary(id: string, { tileData, metatiles, mw, mh }: MetatileExportInput): string[] {
   const lines = [`${id}_tiles::`];
   for (let t = 0; t < tileData.length / BYTES_PER_TILE; t++) {
     lines.push(`    db ${Array.from(tileBytes(tileData, t), (b) => `$${hex(b)}`).join(', ')} ; tile ${t}`);
   }
-  lines.push(`${id}_tiles_end::`, ``, `; ${size * size} tile indices per metatile, row-major`, `${id}_metatiles::`);
+  lines.push(`${id}_tiles_end::`, ``, `; ${mw * mh} tile indices per metatile (${mw} wide x ${mh} high), row-major`, `${id}_metatiles::`);
   metatiles.forEach((m, i) => lines.push(`    db ${m.tiles.flat().map((t) => `$${hex(t)}`).join(', ')} ; metatile ${i}`));
   lines.push(``, `; 1 = solid, one byte per metatile`, `${id}_collision::`);
   lines.push(`    db ${Array.from(collisionBytes(metatiles), (b) => `$${hex(b)}`).join(', ')}`);
@@ -38,7 +40,9 @@ function header(id: string, comment: string, input: MetatileExportInput): string
     ``,
     `DEF ${up}_TILE_COUNT EQU ${input.tileData.length / BYTES_PER_TILE}`,
     `DEF ${up}_METATILE_COUNT EQU ${input.metatiles.length}`,
-    `DEF ${up}_METATILE_SIZE EQU ${input.size}`,
+    `DEF ${up}_METATILE_WIDTH EQU ${input.mw}`,
+    `DEF ${up}_METATILE_HEIGHT EQU ${input.mh}`,
+    ...(input.mw === input.mh ? [`DEF ${up}_METATILE_SIZE EQU ${input.mw}`] : []),
   ];
 }
 
@@ -46,7 +50,7 @@ function header(id: string, comment: string, input: MetatileExportInput): string
 export function exportMetatilesRGBDS(name: string, input: MetatileExportInput): string {
   const id = toIdentifier(name);
   return [
-    ...header(id, `${input.metatiles.length} metatile(s) of ${input.size}x${input.size} tiles`, input),
+    ...header(id, `${input.metatiles.length} metatile(s) of ${input.mw}x${input.mh} tiles`, input),
     ``,
     `SECTION "${id}_metatiles", ROM0`,
     ``,
@@ -62,7 +66,7 @@ export function exportLevelRGBDS(name: string, input: LevelExportInput): string 
   const w = input.map[0].length;
   const h = input.map.length;
   const lines = [
-    ...header(id, `${w}x${h} metatile level (${w * input.size}x${h * input.size} tiles)`, input),
+    ...header(id, `${w}x${h} metatile level (${w * input.mw}x${h * input.mh} tiles)`, input),
     `DEF ${up}_WIDTH EQU ${w}`,
     `DEF ${up}_HEIGHT EQU ${h}`,
     ``,
@@ -95,7 +99,9 @@ function cDefines(id: string, input: MetatileExportInput): string[] {
   return [
     `#define ${up}_TILE_COUNT ${input.tileData.length / BYTES_PER_TILE}`,
     `#define ${up}_METATILE_COUNT ${input.metatiles.length}`,
-    `#define ${up}_METATILE_SIZE ${input.size}`,
+    `#define ${up}_METATILE_WIDTH ${input.mw}`,
+    `#define ${up}_METATILE_HEIGHT ${input.mh}`,
+    ...(input.mw === input.mh ? [`#define ${up}_METATILE_SIZE ${input.mw}`] : []),
   ];
 }
 
@@ -104,8 +110,8 @@ export function exportMetatilesC(name: string, input: MetatileExportInput): stri
   const id = toIdentifier(name);
   const up = id.toUpperCase();
   return [
-    `// ${id} - ${input.metatiles.length} metatile(s) of ${input.size}x${input.size} tiles`,
-    `// Usage: set_bkg_data(0, ${up}_TILE_COUNT, ${id}_tiles); metatile m = ${id}_metatiles + m * (${up}_METATILE_SIZE * ${up}_METATILE_SIZE)`,
+    `// ${id} - ${input.metatiles.length} metatile(s) of ${input.mw}x${input.mh} tiles`,
+    `// Usage: set_bkg_data(0, ${up}_TILE_COUNT, ${id}_tiles); metatile m = ${id}_metatiles + m * (${up}_METATILE_WIDTH * ${up}_METATILE_HEIGHT)`,
     `#ifndef ${up}_H`,
     `#define ${up}_H`,
     ``,
@@ -125,7 +131,7 @@ export function exportLevelC(name: string, input: LevelExportInput): string {
   const w = input.map[0].length;
   const h = input.map.length;
   const lines = [
-    `// ${id} - ${w}x${h} metatile level (${w * input.size}x${h * input.size} tiles)`,
+    `// ${id} - ${w}x${h} metatile level (${w * input.mw}x${h * input.mh} tiles)`,
     `// Usage: set_bkg_data(0, ${up}_TILE_COUNT, ${id}_tiles); draw each ${id}_map cell's metatile with set_bkg_tiles`,
     `#ifndef ${up}_H`,
     `#define ${up}_H`,

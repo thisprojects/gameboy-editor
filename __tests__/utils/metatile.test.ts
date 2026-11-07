@@ -1,7 +1,7 @@
 import { fillRectGrid, resizeGrid } from '@/utils/grid';
 import {
   createMetatile, defaultLibrary, resizeMetatile, clampMetatiles, isValidLibrary, isValidLevelMap, metatileBytes,
-  collisionBytes, maxTileIndex, expandMap, maxMetatileIndex,
+  collisionBytes, maxTileIndex, expandMap, maxMetatileIndex, readDims, dimsFields,
 } from '@/utils/metatile';
 import { renderTileCanvas, renderMetatileCanvas } from '@/utils/render';
 import { exportMetatilesRGBDS, exportMetatilesC, exportLevelRGBDS, exportLevelC } from '@/utils/levelExport';
@@ -29,22 +29,24 @@ describe('grid utils', () => {
 
 describe('metatile utils', () => {
   it('creates metatiles and a default library', () => {
-    const m = createMetatile(4, 2, true);
-    expect(m.tiles).toHaveLength(4);
+    const m = createMetatile(4, 1, 2, true);
+    expect(m.tiles).toHaveLength(1);
+    expect(m.tiles[0]).toHaveLength(4);
     expect(m.tiles.flat().every((t) => t === 2)).toBe(true);
     expect(m.solid).toBe(true);
     const lib = defaultLibrary();
-    expect(lib.size).toBe(2);
+    expect([lib.mw, lib.mh]).toEqual([2, 2]);
     expect(lib.tiles).toHaveLength(2);
     expect(lib.metatiles.map((x) => x.solid)).toEqual([false, true]);
-    expect(isValidLibrary(lib.size, lib.tiles, lib.metatiles)).toBe(true);
+    expect(isValidLibrary({ mw: lib.mw, mh: lib.mh }, lib.tiles, lib.metatiles)).toBe(true);
   });
 
   it('resizes a metatile keeping the top-left', () => {
     const m = { tiles: [[1, 2], [3, 4]], solid: true };
-    expect(resizeMetatile(m, 4).tiles[1]).toEqual([3, 4, 0, 0]);
-    expect(resizeMetatile(m, 4).solid).toBe(true);
-    expect(resizeMetatile(resizeMetatile(m, 4), 2).tiles).toEqual(m.tiles);
+    expect(resizeMetatile(m, 4, 2).tiles[1]).toEqual([3, 4, 0, 0]);
+    expect(resizeMetatile(m, 4, 2).solid).toBe(true);
+    expect(resizeMetatile(resizeMetatile(m, 4, 2), 2, 2).tiles).toEqual(m.tiles);
+    expect(resizeMetatile(m, 1, 4).tiles).toEqual([[1], [3], [0], [0]]);
   });
 
   it('clamps tile references', () => {
@@ -54,26 +56,31 @@ describe('metatile utils', () => {
 
   describe('isValidLibrary', () => {
     const tiles = [createBlankTile(), createSolidTile(1)];
-    const ok = [createMetatile(2)];
-    it('accepts a valid library', () => expect(isValidLibrary(2, tiles, ok)).toBe(true));
+    const ok = [createMetatile(2, 2)];
+    const sq = { mw: 2, mh: 2 };
+    it('accepts a valid library', () => expect(isValidLibrary(sq, tiles, ok)).toBe(true));
+    it('accepts any width x height', () => {
+      expect(isValidLibrary({ mw: 1, mh: 4 }, tiles, [createMetatile(1, 4)])).toBe(true);
+      expect(isValidLibrary({ mw: 3, mh: 1 }, tiles, [createMetatile(3, 1)])).toBe(true);
+      expect(isValidLibrary({ mw: 1, mh: 4 }, tiles, [createMetatile(4, 1)])).toBe(false);
+    });
     it.each([
-      ['bad size', 3, tiles, ok],
-      ['non-number size', '2', tiles, ok],
-      ['bad tileset', 2, [], ok],
-      ['no metatiles', 2, tiles, []],
-      ['too many metatiles', 2, tiles, Array(257).fill(createMetatile(2))],
-      ['not an array', 2, tiles, 'x'],
-      ['missing solid', 2, tiles, [{ tiles: [[0, 0], [0, 0]] }]],
-      ['wrong grid height', 2, tiles, [{ tiles: [[0, 0]], solid: false }]],
-      ['wrong row width', 2, tiles, [{ tiles: [[0], [0, 0]], solid: false }]],
-      ['index out of range', 2, tiles, [{ tiles: [[0, 5], [0, 0]], solid: false }]],
-      ['null metatile', 2, tiles, [null]],
-    ])('rejects %s', (_n, size, t, m) => expect(isValidLibrary(size, t, m)).toBe(false));
+      ['no dimensions', null, tiles, ok],
+      ['bad tileset', sq, [], ok],
+      ['no metatiles', sq, tiles, []],
+      ['too many metatiles', sq, tiles, Array(257).fill(createMetatile(2, 2))],
+      ['not an array', sq, tiles, 'x'],
+      ['missing solid', sq, tiles, [{ tiles: [[0, 0], [0, 0]] }]],
+      ['wrong grid height', sq, tiles, [{ tiles: [[0, 0]], solid: false }]],
+      ['wrong row width', sq, tiles, [{ tiles: [[0], [0, 0]], solid: false }]],
+      ['index out of range', sq, tiles, [{ tiles: [[0, 5], [0, 0]], solid: false }]],
+      ['null metatile', sq, tiles, [null]],
+    ])('rejects %s', (_n, dims, t, m) => expect(isValidLibrary(dims, t, m)).toBe(false));
   });
 
   describe('isValidLevelMap', () => {
     it('accepts a rectangular map within limits', () => {
-      expect(isValidLevelMap([[0, 1], [1, 0]], 2, 2)).toBe(true);
+      expect(isValidLevelMap([[0, 1], [1, 0]], { mw: 2, mh: 2 }, 2)).toBe(true);
     });
     it.each([
       ['not an array', 'x'],
@@ -84,12 +91,18 @@ describe('metatile utils', () => {
       ['too wide', [Array(129).fill(0)]],
       ['too tall', Array(129).fill([0])],
       ['empty row', [[]]],
-    ])('rejects %s', (_n, map) => expect(isValidLevelMap(map, 2, 2)).toBe(false));
+    ])('rejects %s', (_n, map) => expect(isValidLevelMap(map, { mw: 2, mh: 2 }, 2)).toBe(false));
     it('limits depend on the metatile size', () => {
       expect(maxLevelMetatiles(2)).toBe(128);
       expect(maxLevelMetatiles(4)).toBe(64);
-      expect(isValidLevelMap([Array(65).fill(0)], 4, 1)).toBe(false);
-      expect(isValidLevelMap([Array(64).fill(0)], 4, 1)).toBe(true);
+      const sq4 = { mw: 4, mh: 4 };
+      expect(isValidLevelMap([Array(65).fill(0)], sq4, 1)).toBe(false);
+      expect(isValidLevelMap([Array(64).fill(0)], sq4, 1)).toBe(true);
+      // each axis has its own limit: a 1-wide, 8-high metatile allows 256 across but only 32 down
+      const tall = { mw: 1, mh: 8 };
+      expect(isValidLevelMap([Array(256).fill(0)], tall, 1)).toBe(true);
+      expect(isValidLevelMap(Array.from({ length: 33 }, () => [0]), tall, 1)).toBe(false);
+      expect(isValidLevelMap(Array.from({ length: 32 }, () => [0]), tall, 1)).toBe(true);
     });
   });
 
@@ -131,13 +144,15 @@ describe('render helpers', () => {
 describe('level export', () => {
   const metatiles = [{ tiles: [[0, 1], [1, 0]], solid: false }, { tiles: [[1, 1], [1, 1]], solid: true }];
   const tileData = encodeTiles([createBlankTile(), createSolidTile(3)]);
-  const lib = { tileData, metatiles, size: 2 };
+  const lib = { tileData, metatiles, mw: 2, mh: 2 };
   const level = { ...lib, map: [[0, 1, 1], [1, 0, 0]] };
 
   it('writes the metatile library as RGBDS', () => {
     const out = exportMetatilesRGBDS('my set', lib);
     expect(out).toContain('DEF MY_SET_TILE_COUNT EQU 2');
     expect(out).toContain('DEF MY_SET_METATILE_COUNT EQU 2');
+    expect(out).toContain('DEF MY_SET_METATILE_WIDTH EQU 2');
+    expect(out).toContain('DEF MY_SET_METATILE_HEIGHT EQU 2');
     expect(out).toContain('DEF MY_SET_METATILE_SIZE EQU 2');
     expect(out).toContain('my_set_tiles::');
     expect(out).toContain('my_set_metatiles::');
@@ -159,6 +174,8 @@ describe('level export', () => {
 
   it('writes the library as C', () => {
     const out = exportMetatilesC('set', lib);
+    expect(out).toContain('#define SET_METATILE_WIDTH 2');
+    expect(out).toContain('#define SET_METATILE_HEIGHT 2');
     expect(out).toContain('#define SET_METATILE_SIZE 2');
     expect(out).toContain('const unsigned char set_metatiles[] = {');
     expect(out).toContain('0x00,0x01,0x01,0x00, // metatile 0');
@@ -173,5 +190,35 @@ describe('level export', () => {
     expect(out).toContain('#define LVL_HEIGHT 2');
     expect(out).toContain('    0x00,0x01,0x01,\n    0x01,0x00,0x00\n};');
     expect(out).toContain('lvl_collision[]');
+  });
+});
+
+describe('free-form metatile dimensions', () => {
+  it('reads square (size) and rectangular (metatileWidth/Height) project dimensions', () => {
+    expect(readDims({ size: 2 })).toEqual({ mw: 2, mh: 2 });
+    expect(readDims({ metatileWidth: 1, metatileHeight: 4 })).toEqual({ mw: 1, mh: 4 });
+    expect(readDims({ size: 16 })).toEqual({ mw: 16, mh: 16 });
+  });
+  it('rejects bad dimensions', () => {
+    for (const d of [null, undefined, {}, { size: 0 }, { size: 17 }, { size: 1.5 }, { size: '2' }, { metatileWidth: 2 }, { metatileWidth: 2, metatileHeight: 99 }]) {
+      expect(readDims(d as never)).toBeNull();
+    }
+  });
+  it('writes size for square and width/height otherwise', () => {
+    expect(dimsFields({ mw: 2, mh: 2 })).toEqual({ size: 2 });
+    expect(dimsFields({ mw: 1, mh: 4 })).toEqual({ metatileWidth: 1, metatileHeight: 4 });
+  });
+  it('exports a 1x4 floor metatile with its width and height', () => {
+    const metatiles = [{ tiles: [[0], [1], [1], [0]], solid: true }];
+    const tileData = encodeTiles([createBlankTile(), createSolidTile(3)]);
+    const rgbds = exportLevelRGBDS('floor', { tileData, metatiles, mw: 1, mh: 4, map: [[0, 0, 0]] });
+    expect(rgbds).toContain('DEF FLOOR_METATILE_WIDTH EQU 1');
+    expect(rgbds).toContain('DEF FLOOR_METATILE_HEIGHT EQU 4');
+    expect(rgbds).not.toContain('METATILE_SIZE');
+    expect(rgbds).toContain('3x1 metatile level (3x4 tiles)');
+    expect(rgbds).toContain('db $00, $01, $01, $00 ; metatile 0');
+    expect(exportLevelC('floor', { tileData, metatiles, mw: 1, mh: 4, map: [[0]] })).toContain('#define FLOOR_METATILE_HEIGHT 4');
+    // expanded map: one metatile column becomes 4 rows
+    expect(expandMap([[0, 0]], metatiles, 4)).toEqual([[0, 0], [1, 1], [1, 1], [0, 0]]);
   });
 });

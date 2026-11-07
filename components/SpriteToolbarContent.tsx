@@ -140,6 +140,7 @@ export function SpriteToolbarContent(props: SpriteToolbarContentProps) {
         <label className="block text-xs text-gray-400 mt-2 mb-1" htmlFor="obp">Palette</label>
         <select
           id="obp"
+          data-tip="Which object palette register (OBP0 or OBP1) this sprite uses; sets the palette bit of the OAM attribute"
           value={palette}
           onChange={(e) => onPaletteChange(Number(e.target.value) as 0 | 1)}
           className="w-full bg-gray-700 rounded px-2 py-1"
@@ -182,6 +183,7 @@ export function SpriteToolbarContent(props: SpriteToolbarContentProps) {
             <button
               key={i}
               aria-label={`Frame ${i + 1}`}
+              data-tip={`Edit frame ${i + 1}`}
               aria-pressed={i === currentFrame}
               onClick={() => onSelectFrame(i)}
               className={`w-7 h-7 rounded text-xs ${i === currentFrame ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
@@ -191,9 +193,9 @@ export function SpriteToolbarContent(props: SpriteToolbarContentProps) {
           ))}
         </div>
         <div className="flex gap-1 mb-2">
-          <button className={small} onClick={onAddFrame}>Add</button>
-          <button className={small} onClick={onDuplicateFrame}>Duplicate</button>
-          <button className={small} onClick={onDeleteFrame} disabled={frames.length <= 1}>Delete</button>
+          <button className={small} data-tip="Add a new empty animation frame" onClick={onAddFrame}>Add</button>
+          <button className={small} data-tip="Copy the current frame into a new one" onClick={onDuplicateFrame}>Duplicate</button>
+          <button className={small} data-tip="Delete the current frame" onClick={onDeleteFrame} disabled={frames.length <= 1}>Delete</button>
         </div>
         <label className="block text-xs text-gray-400 mb-1" htmlFor="duration">Duration (1/60 s ticks)</label>
         <NumberField

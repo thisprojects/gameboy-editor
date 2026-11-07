@@ -2,6 +2,8 @@
 
 DEF CAVE_TILE_COUNT EQU 7
 DEF CAVE_METATILE_COUNT EQU 7
+DEF CAVE_METATILE_WIDTH EQU 2
+DEF CAVE_METATILE_HEIGHT EQU 2
 DEF CAVE_METATILE_SIZE EQU 2
 DEF CAVE_WIDTH EQU 16
 DEF CAVE_HEIGHT EQU 16
@@ -18,7 +20,7 @@ cave_tiles::
     db $00, $00, $10, $00, $38, $10, $12, $00, $4E, $04, $E4, $40, $40, $0C, $00, $0C ; tile 6
 cave_tiles_end::
 
-; 4 tile indices per metatile, row-major
+; 4 tile indices per metatile (2 wide x 2 high), row-major
 cave_metatiles::
     db $00, $00, $00, $00 ; metatile 0
     db $02, $02, $01, $01 ; metatile 1

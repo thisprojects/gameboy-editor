@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import TileEditorPage from '@/app/(editor)/tile_editor/page';
 import SpriteEditorPage from '@/app/(editor)/sprite_editor/page';
-import MapEditorPage from '@/app/(editor)/map_editor/page';
+import MapEditorPage from '@/app/(editor)/background_editor/page';
 import MetatileEditorPage from '@/app/(editor)/metatile_editor/page';
 import LevelEditorPage from '@/app/(editor)/level_editor/page';
 import FontEditorPage from '@/app/(editor)/font_editor/page';
@@ -25,7 +25,7 @@ describe('export dialogs link to the matching example page', () => {
   it.each([
     ['Tile Editor', TileEditorPage, '/tile_examples.html', /Tiles example/],
     ['Sprite Editor', SpriteEditorPage, '/sprite_examples.html', /Sprites example/],
-    ['Map Editor', MapEditorPage, '/map_examples.html', /Map example/],
+    ['Background Editor', MapEditorPage, '/background_examples.html', /Background example/],
     ['Metatile Editor', MetatileEditorPage, '/level_examples.html', /Level example/],
     ['Level Editor', LevelEditorPage, '/level_examples.html', /Level example/],
     ['Font Editor', FontEditorPage, '/font_examples.html', /Font example/],

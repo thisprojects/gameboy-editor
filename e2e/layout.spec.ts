@@ -1,6 +1,7 @@
 import { test, expect } from './fixtures';
+import { zoomWheel } from './helpers';
 
-const EDITORS = ['/tile_editor', '/sprite_editor', '/map_editor', '/metatile_editor', '/level_editor', '/font_editor', '/music_editor'];
+const EDITORS = ['/tile_editor', '/sprite_editor', '/background_editor', '/metatile_editor', '/level_editor', '/font_editor', '/music_editor'];
 const VIEWPORTS = [
   { width: 1280, height: 720 },
   { width: 1024, height: 700 },
@@ -58,7 +59,7 @@ test.describe('editor layout', () => {
 
 test.describe('big canvases stay reachable', () => {
   const cases = [
-    { route: '/map_editor', canvas: 'map-canvas', note: '32x32 tiles at zoom 3 is 768px tall' },
+    { route: '/background_editor', canvas: 'map-canvas', note: '32x32 tiles at zoom 3 is 768px tall' },
     { route: '/tile_editor', canvas: 'tile-canvas', note: 'zoomed in with the wheel' },
     { route: '/level_editor', canvas: 'level-canvas', note: 'zoomed in with the wheel' },
   ];
@@ -68,9 +69,9 @@ test.describe('big canvases stay reachable', () => {
       await page.goto(route);
       const target = page.getByTestId(canvas);
       await expect(target).toBeVisible();
-      if (route !== '/map_editor') {
+      if (route !== '/background_editor') {
         await target.hover();
-        for (let i = 0; i < 14; i++) await page.mouse.wheel(0, -100);
+        for (let i = 0; i < 14; i++) await zoomWheel(page, -100);
       }
       const geometry = await target.evaluate((c) => {
         const area = c.closest('.overflow-auto')!;
@@ -90,7 +91,7 @@ test.describe('big canvases stay reachable', () => {
 
   test('a canvas that is bigger than its area scrolls instead of being cut off', async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 600 });
-    await page.goto('/map_editor');
+    await page.goto('/background_editor');
     const area = page.locator('.overflow-auto').filter({ has: page.getByTestId('map-canvas') });
     const sizes = await area.evaluate((a) => ({ scrollH: a.scrollHeight, clientH: a.clientHeight, scrollW: a.scrollWidth, clientW: a.clientWidth }));
     expect(sizes.scrollH).toBeGreaterThan(sizes.clientH); // it needs to scroll ...

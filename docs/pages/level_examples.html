@@ -5,7 +5,7 @@ subtitle: From the Metatile and Level Editors to a level you can walk around
 <section id="introduction">
 <h2>Introduction</h2>
 <p>A level is usually bigger than one screen and built from a few repeated blocks. Storing every tile would waste ROM, so the Game Boy editors work with <strong>metatiles</strong>: blocks of 2&times;2 or 4&times;4 tiles (16&times;16 or 32&times;32 pixels). The level is then a grid with <em>one byte per metatile</em>. A 32&times;32-tile level stored as a tile map takes 1024 bytes; as a 16&times;16 grid of 2&times;2 metatiles it takes 256 bytes plus a 28-byte table of the metatiles. A metatile can also carry a <strong>collision flag</strong>, so the game knows which blocks are solid without looking at pixels.</p>
-<p>This example draws a level, lets you walk a small sprite around it that is stopped by solid blocks, and scrolls a camera to follow. It builds on <a href="/tile_examples.html">Tiles</a>, <a href="/map_examples.html">Map</a> (the background map and scrolling) and <a href="/sprite_examples.html">Sprites</a>; the <a href="/tile_examples.html#helpers">helper routines</a> are explained on the first page.</p>
+<p>This example draws a level, lets you walk a small sprite around it that is stopped by solid blocks, and scrolls a camera to follow. It builds on <a href="/tile_examples.html">Tiles</a>, <a href="/background_examples.html">Map</a> (the background map and scrolling) and <a href="/sprite_examples.html">Sprites</a>; the <a href="/tile_examples.html#helpers">helper routines</a> are explained on the first page.</p>
 </section>
 
 <section id="exporting">
@@ -22,7 +22,7 @@ subtitle: From the Metatile and Level Editors to a level you can walk around
 <h2>The Exported Data: cave.asm</h2>
 <p>Besides the tiles (as in the Tiles example) there are three tables. First the sizes:</p>
 [[lines level/cave.asm 1-8]]
-<p>The <strong>metatile table</strong>: four tile numbers per metatile (<code>CAVE_METATILE_SIZE</code> squared), row by row, followed by the <strong>collision table</strong>: one byte per metatile, 1 for solid.</p>
+<p>The <strong>metatile table</strong>: four tile numbers per metatile (<code>CAVE_METATILE_WIDTH</code> &times; <code>CAVE_METATILE_HEIGHT</code>, here 2&times;2; the editor allows any size from 1&times;1 to 16&times;16, for example 1&times;4 for a long floor), row by row, followed by the <strong>collision table</strong>: one byte per metatile, 1 for solid.</p>
 [[part level/cave.asm | ; 4 tile indices | cave_map::]]
 <p>And the <strong>level map</strong>, one metatile number per cell (<code>CAVE_WIDTH</code> by <code>CAVE_HEIGHT</code>). The first rows:</p>
 [[part level/cave.asm | ; metatile index per cell | ; row 3]]
@@ -60,4 +60,20 @@ make run-level/level_demo      # ...and open it in mGBA
 [[/text]]
 <p>Use the direction keys to walk the flower around. It is stopped by the rock, brick and ground, and walks through water, trees and the flowers (which are not solid). Things to try: mark the water as <em>Solid</em> in the Metatile Editor, re-export, and watch it become a lake; or add gravity by moving the player down every frame unless the spot below is <code>Blocked</code>.</p>
 <p>The test script plays this program with random key presses for over a thousand frames and compares every position with an independent model of the same collision rules.</p>
+</section>
+
+<section id="gbdk">
+<h2>The Same Thing in C with GBDK</h2>
+<p>If you prefer C, <em>Export C</em> writes <code>cave.h</code> with <code>cave_tiles</code>, <code>cave_metatiles</code> (each metatile is a block of <code>CAVE_METATILE_WIDTH</code> &times; <code>CAVE_METATILE_HEIGHT</code> tile numbers), <code>cave_collision</code> and the level map. With <a href="https://gbdk-2020.github.io/gbdk-2020/" target="_blank">GBDK-2020</a> the tiles are loaded with <code>set_bkg_data</code> and each map cell is drawn by copying its metatile with <code>set_bkg_tiles</code>; the collision table is indexed by metatile number, exactly as in the assembly program. (The programs in these examples are the RGBDS ones; the C below follows the GBDK documentation but is not compiled or run by the test script.)</p>
+[[text]]
+#include <gb/gb.h>
+#include "cave.h"
+
+void main(void) {
+    set_bkg_data(0, CAVE_TILE_COUNT, cave_tiles);
+    /* draw metatile m at metatile column mx, row my (W = CAVE_METATILE_WIDTH, H = CAVE_METATILE_HEIGHT): */
+    /* set_bkg_tiles(mx * W, my * H, W, H, cave_metatiles + m * W * H); */
+    SHOW_BKG;
+}
+[[/text]]
 </section>

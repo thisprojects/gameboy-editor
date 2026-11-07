@@ -70,8 +70,8 @@ export function MusicToolbarContent(props: MusicToolbarContentProps) {
           ))}
         </select>
         <div className="flex gap-1 mt-2">
-          <button className={small} onClick={props.onAddPattern} disabled={patterns.length >= MAX_PATTERNS}>Add</button>
-          <button className={small} onClick={() => props.onRemovePattern(selectedPatternIndex)} disabled={patterns.length <= 1}>Delete</button>
+          <button className={small} data-tip="Add a new empty pattern" onClick={props.onAddPattern} disabled={patterns.length >= MAX_PATTERNS}>Add</button>
+          <button className={small} data-tip="Delete the selected pattern" onClick={() => props.onRemovePattern(selectedPatternIndex)} disabled={patterns.length <= 1}>Delete</button>
         </div>
         <label className="block text-xs text-gray-400 mt-2 mb-1" htmlFor="rows">Rows ({MIN_PATTERN_ROWS}-{MAX_PATTERN_ROWS})</label>
         <NumberField

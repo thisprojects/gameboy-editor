@@ -167,7 +167,7 @@ nav.examples-nav a[aria-current="page"] { background: var(--lcd-darkest); color:
 <nav class="examples-nav" aria-label="Documentation">
 <strong>Examples:</strong> <a href="/tile_examples.html">Tiles</a>
 <a href="/sprite_examples.html" aria-current="page">Sprites</a>
-<a href="/map_examples.html">Map</a>
+<a href="/background_examples.html">Background</a>
 <a href="/font_examples.html">Font</a>
 <a href="/level_examples.html">Level</a>
 <a href="/music_examples.html">Music</a>
@@ -177,7 +177,7 @@ nav.examples-nav a[aria-current="page"] { background: var(--lcd-darkest); color:
 <section id="introduction">
 <h2>Introduction</h2>
 <p>This is the second worked example. If you have not seen the first one, <a href="/tile_examples.html">Tiles</a> explains how tile data gets into video memory, and its <a href="/tile_examples.html#helpers">helper routines</a> are used here too.</p>
-<p>On the ZX Spectrum, moving graphics are drawn in software, with pre-shifted copies and masks. The Game Boy does it in hardware. It has a table of <strong>40 sprites</strong> (the <em>OAM</em>, at <code>$FE00</code>), each 4 bytes: a Y position, an X position, a tile number and some attributes. The screen hardware draws the sprites on top of the background for you, and <strong>shade 0 is transparent</strong>, so there is no separate mask. A character bigger than one sprite is built from several, side by side. The Sprite Editor does that split for you.</p>
+<p>The Game Boy draws moving graphics in hardware. It has a table of <strong>40 sprites</strong> (the <em>OAM</em>, at <code>$FE00</code>), each 4 bytes: a Y position, an X position, a tile number and some attributes. The screen hardware draws the sprites on top of the background for you, and <strong>shade 0 is transparent</strong>, so there is no separate mask. A character bigger than one sprite is built from several, side by side. The Sprite Editor does that split for you.</p>
 </section>
 
 <section id="exporting">
@@ -532,6 +532,30 @@ nav.examples-nav a[aria-current="page"] { background: var(--lcd-darkest); color:
 make run-sprite/sprite_demo      # ...and open it in mGBA</code></pre>
 <p>The hero walks on the spot; use the direction keys (arrow keys in mGBA) to move it. The program does not stop it leaving the screen: try adding limits to <code>Move</code>.</p>
 <p>Things to try: draw a third frame in the editor and export again (only the file changes, not the program); switch the sprite to <em>OBP1</em> and set <code>rOBP1</code> in the program; set the <em>behind background</em> option, turn the background on and see the hero disappear behind anything that is not shade 0.</p>
+</section>
+
+<section id="gbdk">
+<h2>The Same Thing in C with GBDK</h2>
+<p>If you prefer C, <em>Export C</em> writes <code>hero.h</code> with the tiles, one array per frame (an entry count, then Y offset, X offset, tile and attribute for each entry), the frame table <code>hero_frames</code> and <code>hero_durations</code>. With <a href="https://gbdk-2020.github.io/gbdk-2020/" target="_blank">GBDK-2020</a> the tiles are loaded with <code>set_sprite_data</code> and each entry becomes one hardware sprite. (The programs in these examples are the RGBDS ones; the C below follows the GBDK documentation but is not compiled or run by the test script.)</p>
+<pre><code>#include &lt;gb/gb.h&gt;
+#include "hero.h"
+
+static void draw_frame(unsigned char f, unsigned char x, unsigned char y) {
+    const unsigned char *p = hero_frames[f];
+    unsigned char n = *p++;
+    for (unsigned char i = 0; i &lt; n; i++, p += 4) {
+        set_sprite_tile(i, p[2]);
+        set_sprite_prop(i, p[3]);
+        move_sprite(i, x + p[1] + 8, y + p[0] + 16);   /* OAM coordinates are offset by 8 and 16 */
+    }
+}
+
+void main(void) {
+    set_sprite_data(0, HERO_TILE_COUNT, hero_tiles);
+    SHOW_SPRITES;
+    draw_frame(0, 80, 72);
+}</code></pre>
+<p>When the sprite uses a different frame count, hide the sprites a frame no longer needs with <code>move_sprite(i, 0, 0)</code>.</p>
 </section>
 
 </body>

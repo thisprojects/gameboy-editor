@@ -7,7 +7,7 @@ import { createMetatile } from '@/utils/metatile';
 jest.mock('@/utils/download', () => ({ downloadBlob: jest.fn() }));
 
 const tiles = [createBlankTile(), createSolidTile(3), createSolidTile(2)];
-const metatiles = [createMetatile(2, 0), createMetatile(2, 1, true)];
+const metatiles = [createMetatile(2, 2, 0), createMetatile(2, 2, 1, true)];
 const map = [[0, 1, 1], [1, 0, 0]];
 
 function setup() {
@@ -15,7 +15,7 @@ function setup() {
   const setFileName = jest.fn();
   const setLibrary = jest.fn();
   const hook = renderHook(() =>
-    useLevelProject({ map, size: 2, tiles, metatiles, fileName: 'lvl', setFileName, loadProjectData, setLibrary })
+    useLevelProject({ map, mw: 2, mh: 2, tiles, metatiles, fileName: 'lvl', setFileName, loadProjectData, setLibrary })
   );
   return { ...hook, loadProjectData, setFileName, setLibrary };
 }
@@ -62,7 +62,7 @@ describe('useLevelProject', () => {
     mockReader(JSON.stringify(level()));
     const { result, loadProjectData, setFileName } = setup();
     act(() => result.current.loadProject(changeEvent(new File(['x'], 'boss_level.json'))));
-    expect(loadProjectData).toHaveBeenCalledWith({ map, library: { size: 2, tiles, metatiles } });
+    expect(loadProjectData).toHaveBeenCalledWith({ map, library: { mw: 2, mh: 2, tiles, metatiles } });
     expect(setFileName).toHaveBeenCalledWith('boss');
   });
 
@@ -83,7 +83,7 @@ describe('useLevelProject', () => {
     mockReader(JSON.stringify(library()));
     const { result, setLibrary } = setup();
     act(() => result.current.importLibrary(changeEvent(new File(['x'], 'set_metatiles.json'))));
-    expect(setLibrary).toHaveBeenCalledWith({ size: 2, tiles, metatiles });
+    expect(setLibrary).toHaveBeenCalledWith({ mw: 2, mh: 2, tiles, metatiles });
   });
 
   it.each([

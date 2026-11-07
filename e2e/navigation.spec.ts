@@ -3,7 +3,7 @@ import { test, expect } from './fixtures';
 const EDITORS = [
   { path: '/tile_editor', link: 'Tile Editor' },
   { path: '/sprite_editor', link: 'Sprite Editor' },
-  { path: '/map_editor', link: 'Map Editor' },
+  { path: '/background_editor', link: 'Background Editor' },
   { path: '/metatile_editor', link: 'Metatile Editor' },
   { path: '/level_editor', link: 'Level Editor' },
   { path: '/font_editor', link: 'Font Editor' },
@@ -26,7 +26,7 @@ test.describe('landing page and navigation', () => {
     await page.goto('/tile_editor');
     const nav = page.getByRole('navigation');
     await expect(nav.getByRole('link', { name: 'Tile Editor', exact: true })).toHaveClass(/bg-blue-600/);
-    await expect(nav.getByRole('link', { name: 'Map Editor', exact: true })).not.toHaveClass(/bg-blue-600/);
+    await expect(nav.getByRole('link', { name: 'Background Editor', exact: true })).not.toHaveClass(/bg-blue-600/);
     for (const editor of EDITORS) {
       await nav.getByRole('link', { name: editor.link, exact: true }).click();
       await expect(page).toHaveURL(new RegExp(`${editor.path}$`));
@@ -51,7 +51,7 @@ test.describe('Documentation menu', () => {
     { label: 'Game Boy Assembly Introduction', href: '/gameboy_book.html', heading: 'An Introduction to Game Boy Assembly Language' },
     { label: 'ASM Example: Tiles', href: '/tile_examples.html', heading: 'Tiles: Displaying Exported Tiles' },
     { label: 'ASM Example: Sprites', href: '/sprite_examples.html', heading: 'Sprites: Animating an Exported Sprite' },
-    { label: 'ASM Example: Map', href: '/map_examples.html', heading: 'Map: Showing and Scrolling a Tile Map' },
+    { label: 'ASM Example: Background', href: '/background_examples.html', heading: 'Background: Showing and Scrolling a Tile Map' },
     { label: 'ASM Example: Font', href: '/font_examples.html', heading: 'Font: Printing Text with an Exported Font' },
     { label: 'ASM Example: Level', href: '/level_examples.html', heading: 'Level: Metatiles, Collision and a Camera' },
     { label: 'ASM Example: Music', href: '/music_examples.html', heading: 'Music: Playing an Exported Song' },
@@ -83,4 +83,11 @@ test.describe('Documentation menu', () => {
       await popup.close();
     });
   }
+});
+
+test('old Map Editor links still work', async ({ page }) => {
+  await page.goto('/map_editor');
+  await expect(page).toHaveURL(/\/background_editor$/);
+  await page.goto('/map_examples.html');
+  await expect(page).toHaveURL(/\/background_examples\.html$/);
 });

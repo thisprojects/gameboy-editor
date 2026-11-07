@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures';
-import { exportFile, canvasSize, pixelAt, clickAt } from './helpers';
+import { exportFile, canvasSize, pixelAt, clickAt, zoomWheel } from './helpers';
 
 const CANVAS = 'tile-canvas';
 // Classic Green palette: shade 0 is the lightest, shade 3 the darkest; the canvas is 4x4 tiles at 16 px per pixel
@@ -158,13 +158,13 @@ test.describe('tile editor', () => {
     expect(await pixelAt(page, CANVAS, centre(0), centre(0))).toBe('#000000');
   });
 
-  test('the mouse wheel zooms', async ({ page }) => {
+  test('Ctrl/Cmd + wheel zooms', async ({ page }) => {
     const canvas = page.getByTestId(CANVAS);
     await canvas.hover();
-    await page.mouse.wheel(0, -100);
+    await zoomWheel(page, -100);
     await expect.poll(async () => (await canvasSize(page, CANVAS)).width).toBe(4 * 8 * (PX + 1));
-    await page.mouse.wheel(0, 100);
-    await page.mouse.wheel(0, 100);
+    await zoomWheel(page, 100);
+    await zoomWheel(page, 100);
     await expect.poll(async () => (await canvasSize(page, CANVAS)).width).toBe(4 * 8 * (PX - 1));
   });
 
@@ -206,4 +206,14 @@ test.describe('first visit', () => {
     await expect(page.getByRole('heading', { name: 'Tile Editor', exact: true })).toBeVisible();
     await expect(dialogTitle).toBeHidden();
   });
+});
+
+test('a plain scroll (trackpad swipe) pans sideways and does not zoom', async ({ page }) => {
+  await page.goto('/tile_editor');
+  const canvas = page.getByTestId(CANVAS);
+  const before = await canvas.boundingBox();
+  await canvas.hover();
+  await page.mouse.wheel(-120, 0);
+  await expect.poll(async () => (await canvas.boundingBox())!.x).toBeGreaterThan(before!.x + 100);
+  expect((await canvasSize(page, CANVAS)).width).toBe(4 * 8 * PX);
 });

@@ -1,6 +1,6 @@
-; map_viewer.asm - show the tile map exported from the Map Editor and scroll it
+; map_viewer.asm - show the tile map exported from the Background Editor and scroll it
 ;
-; Export "meadow" from the Map Editor (Export RGBDS) and put meadow.asm next to this file.
+; Export "meadow" from the Background Editor (Export RGBDS) and put meadow.asm next to this file.
 ; It provides meadow_tiles (the tiles the map uses), meadow_map (one byte per cell, row by row),
 ; and the sizes MEADOW_TILE_COUNT, MEADOW_MAP_WIDTH and MEADOW_MAP_HEIGHT.
 ; Use the direction keys to scroll the background.

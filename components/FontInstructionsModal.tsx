@@ -28,6 +28,13 @@ export function FontInstructionsModal({ isOpen, onClose }: FontInstructionsModal
           </button>
         </div>
         <div className="overflow-y-auto p-5 space-y-5 text-sm text-gray-300">
+          <section className="rounded-md bg-gray-900/60 border border-gray-700 p-3">
+            <h3 className="text-base font-semibold text-white mb-1">What you would make with this</h3>
+            <p className="text-white mb-1">Design the letters and numbers your game uses to print text.</p>
+            <p>
+              The Game Boy has no built-in font, so any text (a score, a dialogue box, a menu) needs letters you provide. This editor gives you all 96 printable characters to draw or tweak, starting from a ready-made font, with a live preview of a line of text. Once exported, your game prints a message by looking up each letter&apos;s tile.
+            </p>
+          </section>
           <section>
             <h3 className="text-base font-semibold text-white mb-2">Fonts are tiles</h3>
             <p>

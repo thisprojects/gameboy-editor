@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures';
-import { exportFile, examplePath, readExample, loadProject, pixelAt, clickAt, canvasSize, typeNumber } from './helpers';
+import { exportFile, examplePath, readExample, loadProject, pixelAt, clickAt, canvasSize, typeNumber, zoomWheel } from './helpers';
 
 const MAP = 'map-canvas';
 const PALETTE = 'tile-palette';
@@ -17,7 +17,7 @@ const flat = (m: number[][]) => m.flat();
 
 test.describe('map editor', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/map_editor');
+    await page.goto('/background_editor');
     await expect(page.getByTestId(MAP)).toBeVisible();
     await loadProject(page, examplePath('map/meadow_map.json'));
     await page.getByLabel('Show grid').uncheck(); // (so that sampled pixels are the tile colours)
@@ -161,12 +161,12 @@ test.describe('map editor', () => {
     expect(await pixelAt(page, MAP, CELL, 12)).not.toBe(before);
   });
 
-  test('the mouse wheel zooms between 1x and 8x', async ({ page }) => {
+  test('Ctrl/Cmd + wheel zooms between 1x and 8x', async ({ page }) => {
     const canvas = page.getByTestId(MAP);
     await canvas.hover();
-    await page.mouse.wheel(0, -100);
+    await zoomWheel(page, -100);
     await expect.poll(async () => (await canvasSize(page, MAP)).width).toBe(32 * 8 * 4);
-    for (let i = 0; i < 6; i++) await page.mouse.wheel(0, 100);
+    for (let i = 0; i < 6; i++) await zoomWheel(page, 100);
     await expect.poll(async () => (await canvasSize(page, MAP)).width).toBe(32 * 8 * 1);
   });
 
