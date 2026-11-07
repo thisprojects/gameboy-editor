@@ -1,0 +1,66 @@
+title: Music Example: Playing an Exported Song on a Game Boy
+heading: Music: Playing an Exported Song
+subtitle: From the Music Editor to sound from the Game Boy's four channels
+---
+<section id="introduction">
+<h2>Introduction</h2>
+<p>The ZX Spectrum 128K plays music on the AY-3-8912 chip; the Game Boy has its own sound chip with four channels. <strong>Pulse 1</strong> and <strong>Pulse 2</strong> make square-like waves with a choice of 4 duty cycles (Pulse 1 can also sweep its pitch up or down). The <strong>Wave</strong> channel plays a 32-sample, 4-bit waveform that you draw. The <strong>Noise</strong> channel makes noise from a shift register, for drums and effects. Volume fades come from a hardware <em>envelope</em> on the pulse and noise channels, so a note starts and fades with no more work for the CPU.</p>
+<p>A tracker song is a list of patterns, each a grid of notes by rows. The Music Editor turns every row into the <strong>sound register writes</strong> that produce those notes, and the exported player just replays them, once per frame. The editor's preview uses the same writes, so what you hear is what the console gets. The programs on the other pages, starting with <a href="/tile_examples.html">Tiles</a>, share the <a href="/tile_examples.html#helpers">helper routines</a> explained there.</p>
+</section>
+
+<section id="exporting">
+<h2>Exporting from the Editor</h2>
+<ol class="steps">
+<li>In the <strong>Music Editor</strong>, click a cell and play notes on the keyboard (<kbd>Z</kbd>&ndash;<kbd>M</kbd>, and <kbd>Q</kbd>&ndash;<kbd>U</kbd> one octave up). Each channel has its own instrument and octave, used for the notes you enter next (notes already entered keep theirs; change a single note by clicking it). <strong>Instruments&hellip;</strong> edits duty cycles, envelopes, the pulse sweep, the drawn waveform and the noise type. On the noise channel the note sets the pitch of the noise.</li>
+<li>Set the <em>speed</em>: the number of video frames (1/60 s) per row. Build the order the patterns play in. The song loops.</li>
+<li>Click <strong>Export RGBDS (.asm)</strong> and name the file <code>song</code>. <code>song_music.json</code> is the two-pattern song used here: load it with <em>Load project</em>. (<em>Export C</em> writes a header with the same data and player for GBDK.)</li>
+</ol>
+</section>
+
+<section id="exported-data">
+<h2>The Exported Data: song.asm</h2>
+<p>The file starts with the speed and sizes, and a few bytes of RAM for the player:</p>
+[[lines music/song.asm 1-18]]
+<p>The song itself is the order list, a table of the patterns, and then each pattern as a stream. A pattern starts with its number of rows; each row starts with the number of register writes it needs, followed by that many pairs of <em>register</em> and <em>value</em> (the register is the low byte of its address, <code>$FF00+n</code>). The first row of the first pattern starts a note on all four channels: Pulse 1 (<code>NR10</code>&ndash;<code>NR14</code>), Pulse 2 (<code>NR21</code>&ndash;<code>NR24</code>), the wave channel, which first has its waveform copied into wave RAM, and the noise channel (<code>NR42</code>&ndash;<code>NR44</code>) for a kick drum:</p>
+[[part music/song.asm | song_order:: | ; row 1]]
+<p>Rows with nothing new to do have a count of 0 and cost one byte. The register writes are exactly the ones the hardware needs: <code>NR12</code> is the envelope (<code>$F0</code> is volume 15 with no fade, <code>$F2</code> fades), <code>NR13</code> and <code>NR14</code> are the low and high bits of the pitch with bit 7 of <code>NR14</code> meaning &ldquo;start the note&rdquo;. The wave channel's waveform can only be changed while the channel's DAC is off, which is why <code>NR30</code> is written <code>0</code> before wave RAM and <code>$80</code> after.</p>
+</section>
+
+<section id="player">
+<h2>The Player</h2>
+<p>The same file contains the player. <code>song_init</code> switches the sound chip on and sets the master volume (<code>NR52</code>, <code>NR50</code>, <code>NR51</code>), and rewinds the song. <code>song_update</code> is called once per frame: it counts frames, and when a row is due it replays that row's register writes through <code>ldh [c], a</code>, which stores <code>A</code> at <code>$FF00 + C</code>. When it reaches the end of a pattern it moves to the next in the order list, and at the end of the list back to the start. <code>song_stop</code> turns all four channels off.</p>
+[[part music/song.asm | song_init:: | SECTION "song_music_data"]]
+</section>
+
+<section id="program">
+<h2>The Program: music_demo.asm</h2>
+<p>The program is short because the player does the work. The one rule is that <code>song_update</code> must be called <strong>exactly once per frame</strong>, which is what <code>WaitFrame</code> guarantees. (Real games usually call it from the VBlank interrupt handler so the music stays in time however long the game takes to run.) A stops the music with <code>song_stop</code> and B restarts it with <code>song_init</code>.</p>
+[[file music/music_demo.asm]]
+</section>
+
+<section id="running">
+<h2>Assembling and Running</h2>
+[[text]]
+make music/music_demo.gb       # assemble, link and fix the header
+make run-music/music_demo      # ...and open it in mGBA
+[[/text]]
+<p>The screen stays blank; there is only sound. The test script runs this ROM on an emulated Game Boy with sound switched on, listens to the first row and checks that the notes the editor put there (C5 on Pulse 1, C4 on Pulse 2 and C3 on the wave channel) are the loudest frequencies in the output.</p>
+<p>Things to try: change the speed in the editor to 4 and export again; draw a new waveform and give the bass a different sound; give Pulse 1 an instrument with a downward sweep for a laser effect.</p>
+</section>
+
+<section id="gbdk">
+<h2>The Same Thing in C with GBDK</h2>
+<p><em>Export C</em> writes <code>song.h</code> with the data and a player with the same three functions. Include it in one <code>.c</code> file and call the player once per frame. (As with the C on the other pages, this follows the GBDK documentation but is not run by the test script.)</p>
+[[text]]
+#include <gb/gb.h>
+#include "song.h"
+
+void main(void) {
+    song_init();
+    while (1) {
+        wait_vbl_done();    /* one frame */
+        song_update();
+    }
+}
+[[/text]]
+</section>

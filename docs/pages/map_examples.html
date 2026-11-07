@@ -1,0 +1,51 @@
+title: Map Example: Displaying and Scrolling an Exported Tile Map on a Game Boy
+heading: Map: Showing and Scrolling a Tile Map
+subtitle: From the Map Editor to a scrolling background
+---
+<section id="introduction">
+<h2>Introduction</h2>
+<p>The ZX Spectrum scene editor produces a screen of pixels with colour attributes. The Game Boy has no screen of pixels: the picture you see is a grid of tile numbers, the <strong>background map</strong>, drawn with the tiles in VRAM. The map is <strong>32&times;32 tiles</strong> (256&times;256 pixels) but the screen shows a window of only <strong>20&times;18 tiles</strong> (160&times;144 pixels). Two registers, <code>rSCX</code> and <code>rSCY</code>, say where that window is, and it wraps round the edges of the map. That is all a scrolling background is.</p>
+<p>The first example, <a href="/tile_examples.html">Tiles</a>, shows how tiles get into VRAM; this one adds the map. Its <a href="/tile_examples.html#helpers">helper routines</a> are explained there.</p>
+</section>
+
+<section id="exporting">
+<h2>Exporting from the Editor</h2>
+<ol class="steps">
+<li>In the <strong>Map Editor</strong>, import your tileset (a file saved from the Tile Editor, or a <code>.2bpp</code>), pick tiles in the palette and paint the map. <code>meadow_map.json</code> is the map used here: load it with <em>Load project</em>, tileset included.</li>
+<li>Choose the <strong>Export area</strong>: the <em>full map</em> (32&times;32), just the <em>screen</em> (20&times;18 at the SCX/SCY you set) or the <em>used area</em> (the box around every tile that is not tile 0).</li>
+<li>Click <strong>Export RGBDS (.asm)</strong> and name the file <code>meadow</code>. (<em>Export map (.tilemap)</em> is just the map bytes, <em>Export tiles (.2bpp)</em> just the tiles.)</li>
+</ol>
+</section>
+
+<section id="exported-data">
+<h2>The Exported Data: meadow.asm</h2>
+<p>The file starts with the sizes and the tile data, as in the Tiles example. Only the tiles up to the highest number the map uses are included.</p>
+[[part map/meadow.asm | DEF MEADOW_TILE_COUNT | SECTION]]
+<p>Then comes the map: one byte per cell, one <code>db</code> line per row, <code>MEADOW_MAP_WIDTH</code> bytes wide. This is the start of it:</p>
+[[part map/meadow.asm | meadow_map:: | ; row 4]]
+<p>A byte is a tile number, so a map can use at most 256 different tiles. Because the exported area can be smaller than the 32&times;32 hardware map, the width and height are exported as constants, and the program has to copy the map one row at a time.</p>
+</section>
+
+<section id="program">
+<h2>The Program: map_viewer.asm</h2>
+<h3>Copying the map</h3>
+<p>The tiles go to <code>$8000</code>, the map to <code>$9800</code>. The program first fills the whole hardware map with tile 0 (video memory is not empty when a program starts: the boot ROM leaves its logo in it), so any cell the export does not cover shows tile 0. The hardware map is always 32 tiles wide, so the copy loop then moves the destination on by <code>VRAM_MAP_W - MEADOW_MAP_WIDTH</code> after each row. With the full 32&times;32 export that is zero; with the 20&times;18 screen export it skips the 12 cells of each hardware row that the export does not cover.</p>
+[[part map/map_viewer.asm | Start: | ld a, %11100100]]
+<h3>Scrolling</h3>
+<p>The loop keeps the scroll position in two variables. At the start of every VBlank it copies them to <code>rSCX</code> and <code>rSCY</code>, then reads the keys and changes the variables. (The scroll registers take effect straight away, so changing them in the middle of a frame would tear the picture.) Because the window wraps round the 256&times;256 map, the edges of the meadow are all trees: scrolling past one edge shows the other, so the map seems endless.</p>
+[[part map/map_viewer.asm | .loop: | INCLUDE "util.inc"]]
+</section>
+
+<section id="source">
+<h2>Complete Source</h2>
+[[file map/map_viewer.asm]]
+</section>
+
+<section id="running">
+<h2>Assembling and Running</h2>
+[[text]]
+make map/map_viewer.gb       # assemble, link and fix the header
+make run-map/map_viewer      # ...and open it in mGBA
+[[/text]]
+<p>Use the direction keys to scroll. Things to try: export just the <em>screen</em> area from the editor (set SCX and SCY to choose which part) and run the program again without changing it &mdash; the row-by-row copy handles the smaller map; change <code>rBGP</code> to <code>%00011011</code> for a negative picture; or add a second layer of interest by turning on sprites as in the <a href="/sprite_examples.html">Sprites</a> example.</p>
+</section>

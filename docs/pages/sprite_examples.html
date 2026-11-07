@@ -1,0 +1,61 @@
+title: Sprite Example: Animating an Exported Sprite on a Game Boy
+heading: Sprites: Animating an Exported Sprite
+subtitle: From the Sprite Editor to a moving hero on a Game Boy screen
+---
+<section id="introduction">
+<h2>Introduction</h2>
+<p>This is the second worked example. If you have not seen the first one, <a href="/tile_examples.html">Tiles</a> explains how tile data gets into video memory, and its <a href="/tile_examples.html#helpers">helper routines</a> are used here too.</p>
+<p>On the ZX Spectrum, moving graphics are drawn in software, with pre-shifted copies and masks. The Game Boy does it in hardware. It has a table of <strong>40 sprites</strong> (the <em>OAM</em>, at <code>$FE00</code>), each 4 bytes: a Y position, an X position, a tile number and some attributes. The screen hardware draws the sprites on top of the background for you, and <strong>shade 0 is transparent</strong>, so there is no separate mask. A character bigger than one sprite is built from several, side by side. The Sprite Editor does that split for you.</p>
+</section>
+
+<section id="exporting">
+<h2>Exporting from the Editor</h2>
+<ol class="steps">
+<li>In the <strong>Sprite Editor</strong>, set the sprite size in tiles (the hero is 2&times;2 tiles, 16&times;16 pixels) and the <strong>OBJ size</strong>. The example uses <em>8&times;16</em>: each hardware sprite is a column of two tiles, so the hero is two sprites. In <em>8&times;8</em> mode it would be four.</li>
+<li>Draw each frame, give it a duration (in 1/60 s ticks) and press Play to preview. Choose the palette (OBP0 or OBP1) and whether the sprite is drawn <em>behind</em> the background.</li>
+<li>Click <strong>Export RGBDS (.asm)</strong> and name the file <code>hero</code>. Load <code>hero_sprite.json</code> with <em>Load project</em> to see the sprite below in the editor.</li>
+</ol>
+<p>Tiles that are completely empty are not exported, and no sprite is created for them.</p>
+</section>
+
+<section id="exported-data">
+<h2>The Exported Data: hero.asm</h2>
+[[file sprite/hero.asm]]
+<ul>
+<li><code>hero_tiles</code> is the tile data of all frames, one after another. Sprites and the background share the tile memory at <code>$8000</code>; the sprite's tile numbers count from the first tile you load.</li>
+<li><code>hero_frames</code> is a table of pointers, one per frame. Each points to a list: first the number of sprites, then for each sprite four bytes: <strong>y offset, x offset, tile number, attributes</strong>. The offsets are from the top-left corner of the whole character. In 8&times;16 mode the tile number of a sprite is the first of its two tiles.</li>
+<li><code>hero_durations</code> holds how many frames (1/60 s) each animation frame stays on screen.</li>
+<li>The attribute byte holds the palette (bit 4), flip bits (6 and 5) and the priority bit (bit 7). The editor sets the palette and priority you chose; flipping is up to the program, which can <code>OR</code> a flip bit into the byte when it copies it.</li>
+</ul>
+</section>
+
+<section id="program">
+<h2>The Program: sprite_demo.asm</h2>
+<h3>Setting up</h3>
+<p>The tiles are copied to <code>$8000</code> with the LCD off, as in the first example. The sprite table contains random bytes when the console starts, so the program also switches all 40 sprites off by filling it with zeros (a sprite with Y = 0 is off the top of the screen). It then sets <code>rLCDC</code> bit 2 (<code>LCDCF_OBJ16</code>) to select 8&times;16 sprites, since that is how the hero was exported, and <code>LCDCF_OBJON</code> to show sprites. There is no <code>LCDCF_BGON</code>, so the background is off and the screen is plain white behind the hero.</p>
+[[part sprite/sprite_demo.asm | Start: | .loop:]]
+<h3>The main loop</h3>
+<p>Every pass starts with <code>WaitFrame</code>, which returns at the start of VBlank. That is the time the sprite table can safely be written. The rest of the frame is for working out what happens next.</p>
+[[part sprite/sprite_demo.asm | .loop: | ; Move the sprite]]
+<h3>Writing the sprite table</h3>
+<p><code>DrawSprite</code> looks up the current frame in <code>hero_frames</code> and copies each entry to the sprite table, adding the hero's position. The hardware subtracts 16 from every Y and 8 from every X, so that a sprite can slide in from off screen; the program adds them back. When it has copied the entries it clears the rest of the table, because the next frame may have fewer sprites.</p>
+[[part sprite/sprite_demo.asm | ; Write the OAM entries | INCLUDE "util.inc"]]
+<h3>Animating and moving</h3>
+<p><code>Animate</code> counts down a timer; when it reaches zero it moves to the next frame (wrapping at <code>HERO_FRAME_COUNT</code>) and loads that frame's duration from <code>hero_durations</code>. <code>Move</code> reads the keys that <code>ReadJoypad</code> stored in <code>wJoypad</code> and changes the position by one pixel per frame.</p>
+[[part sprite/sprite_demo.asm | ; Move the sprite one pixel | ; Write the OAM entries]]
+</section>
+
+<section id="source">
+<h2>Complete Source</h2>
+[[file sprite/sprite_demo.asm]]
+</section>
+
+<section id="running">
+<h2>Assembling and Running</h2>
+[[text]]
+make sprite/sprite_demo.gb       # assemble, link and fix the header
+make run-sprite/sprite_demo      # ...and open it in mGBA
+[[/text]]
+<p>The hero walks on the spot; use the direction keys (arrow keys in mGBA) to move it. The program does not stop it leaving the screen: try adding limits to <code>Move</code>.</p>
+<p>Things to try: draw a third frame in the editor and export again (only the file changes, not the program); switch the sprite to <em>OBP1</em> and set <code>rOBP1</code> in the program; set the <em>behind background</em> option, turn the background on and see the hero disappear behind anything that is not shade 0.</p>
+</section>

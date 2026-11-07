@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprite Example: Animating an Exported Sprite on a Game Boy</title>
+<style>
+/* The four shades of the original Game Boy LCD, plus two extra tints for readable text.
+   (Copied from the Game Boy book, whose tests check every text/background pair for WCAG AA contrast.) */
+:root {
+    --lcd-lightest: #9bbc0f;
+    --lcd-light: #8bac0f;
+    --lcd-dark: #306230;
+    --lcd-darkest: #0f380f;
+    --bezel: #4b4d5e;
+
+    --bg: #9bbc0f;            /* page: the lightest LCD green */
+    --surface: #adcb2c;       /* panels: a slightly paler green */
+    --text: #0f380f;          /* body text: the darkest LCD green */
+    --text-dim: #214a18;
+    --heading: #0f380f;
+    --rule: #306230;
+    --link: #0b2e0b;
+
+    --code-bg: #0f380f;       /* code blocks: an inverted screen */
+    --code-border: #306230;
+    --code-text: #d3eb78;
+    --code-comment: #9bbc0f;
+    --code-keyword: #f2fba8;
+    --code-label: #c8e85a;
+    --code-string: #b5d842;
+    --code-number: #e4f58e;
+    --code-directive: #a9cf3a;
+    --inline-code-bg: #0f380f;
+    --inline-code-text: #d3eb78;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Courier New', Courier, 'Lucida Console', monospace;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+}
+h1, h2, h3 { color: var(--heading); margin-top: 2.5rem; margin-bottom: 1rem; letter-spacing: 0.02em; }
+h1 { font-size: 2rem; border-bottom: 4px solid var(--rule); padding-bottom: 0.5rem; }
+h2 { font-size: 1.5rem; border-bottom: 2px dashed var(--rule); padding-bottom: 0.3rem; }
+h3 { font-size: 1.2rem; }
+h3::before { content: "\25B6\00a0"; }   /* a little menu cursor */
+p { margin-bottom: 1rem; }
+ul, ol { margin: 0 0 1rem 1.5rem; }
+li { margin-bottom: 0.3rem; }
+strong { font-weight: 700; }
+.title-block {
+    text-align: center;
+    padding: 2.5rem 1rem 1.5rem;
+    margin-bottom: 2rem;
+    background: var(--bezel);
+    border-radius: 14px 14px 56px 14px;
+    box-shadow: 0 4px 0 #2d2f3b;
+}
+.title-block .screen {
+    background: var(--lcd-lightest);
+    border: 6px solid #2d2f3b;
+    border-radius: 6px;
+    margin: 0 auto;
+    max-width: 640px;
+    padding: 1.5rem 1rem;
+    box-shadow: inset 0 0 0 3px var(--lcd-light);
+}
+.title-block h1 { border: none; font-size: 2.2rem; margin-top: 0; color: var(--lcd-darkest); }
+.title-block .subtitle { font-size: 1.1rem; color: var(--text-dim); margin-top: 0.5rem; }
+.title-block .assembler { font-size: 0.9rem; color: var(--text); margin-top: 1rem; font-weight: 700; }
+.title-block .bezel-text { color: #ffffff; font-size: 0.8rem; letter-spacing: 0.15em; margin-top: 1rem; }
+nav#toc {
+    background: var(--surface);
+    border: 3px solid var(--rule);
+    border-radius: 6px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 3rem;
+}
+nav#toc h2 { margin-top: 0; }
+nav#toc ul { list-style: none; margin-left: 0; padding-left: 0; }
+nav#toc > ul > li { margin-bottom: 0.4rem; }
+nav#toc ul ul { padding-left: 1.5rem; }
+nav#toc ul ul li { margin-bottom: 0.2rem; }
+a { color: var(--link); text-decoration: underline; }
+a:hover, a:focus { background: var(--lcd-darkest); color: var(--lcd-lightest); }
+pre {
+    background: var(--code-bg);
+    border: 3px solid var(--code-border);
+    border-radius: 6px;
+    padding: 1rem 1.2rem;
+    overflow-x: auto;
+    margin-bottom: 1.2rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+code {
+    font-family: 'Courier New', Courier, 'Lucida Console', monospace;
+    background: var(--inline-code-bg);
+    color: var(--inline-code-text);
+    padding: 0 0.3em;
+    border-radius: 3px;
+}
+pre code { background: none; color: var(--code-text); padding: 0; }
+kbd { background: var(--lcd-darkest); color: var(--lcd-lightest); padding: 0 0.35em; border-radius: 3px; font-family: inherit; }
+.comment { color: var(--code-comment); }
+.keyword { color: var(--code-keyword); font-weight: 700; }
+.label { color: var(--code-label); text-decoration: underline; }
+.string { color: var(--code-string); }
+.number { color: var(--code-number); }
+.directive { color: var(--code-directive); font-weight: 700; }
+.bold-text { font-weight: 700; }
+.note {
+    background: var(--surface);
+    border-left: 8px solid var(--rule);
+    padding: 0.8rem 1rem;
+    margin-bottom: 1.2rem;
+}
+.back-to-top {
+    display: inline-block;
+    margin-top: 0.3rem;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+}
+section { margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid var(--rule); }
+section:last-child { border-bottom: none; }
+table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
+th { text-align: left; padding: 0.5rem; color: var(--heading); border-bottom: 3px solid var(--rule); }
+td { padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+tr.highlight-row { background: var(--surface); }
+@media (max-width: 600px) { body { padding: 1rem 0.8rem; } .title-block h1 { font-size: 1.6rem; } }
+
+/* --- additions for the editor's example pages --- */
+nav.examples-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.3rem 1.1rem;
+    background: var(--surface);
+    border: 3px solid var(--rule);
+    border-radius: 6px;
+    padding: 0.7rem 1.2rem;
+    margin-bottom: 2rem;
+}
+nav.examples-nav strong { color: var(--heading); }
+nav.examples-nav a[aria-current="page"] { background: var(--lcd-darkest); color: var(--lcd-lightest); text-decoration: none; padding: 0 0.4em; }
+.steps > li { margin-bottom: 0.6rem; }
+</style>
+</head>
+<body>
+
+<div class="title-block">
+<div class="screen">
+<h1>Sprites: Animating an Exported Sprite</h1>
+<div class="subtitle">From the Sprite Editor to a moving hero on a Game Boy screen</div>
+</div>
+<div class="bezel-text">DOT MATRIX &middot; 160 &times; 144 &middot; 4 SHADES</div>
+</div>
+
+<nav class="examples-nav" aria-label="Documentation">
+<strong>Examples:</strong> <a href="/tile_examples.html">Tiles</a>
+<a href="/sprite_examples.html" aria-current="page">Sprites</a>
+<a href="/map_examples.html">Map</a>
+<a href="/font_examples.html">Font</a>
+<a href="/level_examples.html">Level</a>
+<a href="/music_examples.html">Music</a>
+<span>&middot;</span> <a href="/gameboy_book.html">Game Boy Assembly Introduction</a>
+</nav>
+
+<section id="introduction">
+<h2>Introduction</h2>
+<p>This is the second worked example. If you have not seen the first one, <a href="/tile_examples.html">Tiles</a> explains how tile data gets into video memory, and its <a href="/tile_examples.html#helpers">helper routines</a> are used here too.</p>
+<p>On the ZX Spectrum, moving graphics are drawn in software, with pre-shifted copies and masks. The Game Boy does it in hardware. It has a table of <strong>40 sprites</strong> (the <em>OAM</em>, at <code>$FE00</code>), each 4 bytes: a Y position, an X position, a tile number and some attributes. The screen hardware draws the sprites on top of the background for you, and <strong>shade 0 is transparent</strong>, so there is no separate mask. A character bigger than one sprite is built from several, side by side. The Sprite Editor does that split for you.</p>
+</section>
+
+<section id="exporting">
+<h2>Exporting from the Editor</h2>
+<ol class="steps">
+<li>In the <strong>Sprite Editor</strong>, set the sprite size in tiles (the hero is 2&times;2 tiles, 16&times;16 pixels) and the <strong>OBJ size</strong>. The example uses <em>8&times;16</em>: each hardware sprite is a column of two tiles, so the hero is two sprites. In <em>8&times;8</em> mode it would be four.</li>
+<li>Draw each frame, give it a duration (in 1/60 s ticks) and press Play to preview. Choose the palette (OBP0 or OBP1) and whether the sprite is drawn <em>behind</em> the background.</li>
+<li>Click <strong>Export RGBDS (.asm)</strong> and name the file <code>hero</code>. Load <code>hero_sprite.json</code> with <em>Load project</em> to see the sprite below in the editor.</li>
+</ol>
+<p>Tiles that are completely empty are not exported, and no sprite is created for them.</p>
+</section>
+
+<section id="exported-data">
+<h2>The Exported Data: hero.asm</h2>
+<pre><code><span class="comment">; hero - 2 frame(s), 8 tile(s)</span>
+<span class="comment">; Each frame: db entry_count, then per entry: db y_offset, x_offset, tile, attr</span>
+<span class="comment">; Add 16 to Y and 8 to X (plus your position) when writing to OAM. Tile indices are relative to</span>
+<span class="comment">; the first tile you load. Flip flags can be OR-ed into attr at runtime. Durations are in 1/60 s ticks.</span>
+
+<span class="directive">DEF</span> HERO_FRAME_COUNT EQU <span class="number">2</span>
+<span class="directive">DEF</span> HERO_TILE_COUNT EQU <span class="number">8</span>
+
+<span class="directive">SECTION</span> <span class="string">"hero_sprite"</span>, ROM0
+
+<span class="label">hero_tiles</span>::
+    <span class="directive">db</span> <span class="number">$07</span>, <span class="number">$07</span>, <span class="number">$0F</span>, <span class="number">$0F</span>, <span class="number">$08</span>, <span class="number">$0F</span>, <span class="number">$0A</span>, <span class="number">$0F</span>, <span class="number">$08</span>, <span class="number">$0F</span>, <span class="number">$07</span>, <span class="number">$07</span>, <span class="number">$18</span>, <span class="number">$1F</span>, <span class="number">$28</span>, <span class="number">$3F</span> <span class="comment">; tile 0</span>
+    <span class="directive">db</span> <span class="number">$28</span>, <span class="number">$3F</span>, <span class="number">$38</span>, <span class="number">$3F</span>, <span class="number">$08</span>, <span class="number">$0F</span>, <span class="number">$0D</span>, <span class="number">$0F</span>, <span class="number">$0A</span>, <span class="number">$0E</span>, <span class="number">$1A</span>, <span class="number">$1E</span>, <span class="number">$1C</span>, <span class="number">$1C</span>, <span class="number">$00</span>, <span class="number">$00</span> <span class="comment">; tile 1</span>
+    <span class="directive">db</span> <span class="number">$E0</span>, <span class="number">$E0</span>, <span class="number">$F0</span>, <span class="number">$F0</span>, <span class="number">$10</span>, <span class="number">$F0</span>, <span class="number">$50</span>, <span class="number">$F0</span>, <span class="number">$10</span>, <span class="number">$F0</span>, <span class="number">$E0</span>, <span class="number">$E0</span>, <span class="number">$18</span>, <span class="number">$F8</span>, <span class="number">$14</span>, <span class="number">$FC</span> <span class="comment">; tile 2</span>
+    <span class="directive">db</span> <span class="number">$14</span>, <span class="number">$FC</span>, <span class="number">$1C</span>, <span class="number">$FC</span>, <span class="number">$10</span>, <span class="number">$F0</span>, <span class="number">$B0</span>, <span class="number">$F0</span>, <span class="number">$50</span>, <span class="number">$70</span>, <span class="number">$58</span>, <span class="number">$78</span>, <span class="number">$38</span>, <span class="number">$38</span>, <span class="number">$00</span>, <span class="number">$00</span> <span class="comment">; tile 3</span>
+    <span class="directive">db</span> <span class="number">$07</span>, <span class="number">$07</span>, <span class="number">$0F</span>, <span class="number">$0F</span>, <span class="number">$08</span>, <span class="number">$0F</span>, <span class="number">$0A</span>, <span class="number">$0F</span>, <span class="number">$08</span>, <span class="number">$0F</span>, <span class="number">$07</span>, <span class="number">$07</span>, <span class="number">$18</span>, <span class="number">$1F</span>, <span class="number">$28</span>, <span class="number">$3F</span> <span class="comment">; tile 4</span>
+    <span class="directive">db</span> <span class="number">$28</span>, <span class="number">$3F</span>, <span class="number">$38</span>, <span class="number">$3F</span>, <span class="number">$08</span>, <span class="number">$0F</span>, <span class="number">$0D</span>, <span class="number">$0F</span>, <span class="number">$05</span>, <span class="number">$07</span>, <span class="number">$05</span>, <span class="number">$07</span>, <span class="number">$07</span>, <span class="number">$07</span>, <span class="number">$00</span>, <span class="number">$00</span> <span class="comment">; tile 5</span>
+    <span class="directive">db</span> <span class="number">$E0</span>, <span class="number">$E0</span>, <span class="number">$F0</span>, <span class="number">$F0</span>, <span class="number">$10</span>, <span class="number">$F0</span>, <span class="number">$50</span>, <span class="number">$F0</span>, <span class="number">$10</span>, <span class="number">$F0</span>, <span class="number">$E0</span>, <span class="number">$E0</span>, <span class="number">$18</span>, <span class="number">$F8</span>, <span class="number">$14</span>, <span class="number">$FC</span> <span class="comment">; tile 6</span>
+    <span class="directive">db</span> <span class="number">$14</span>, <span class="number">$FC</span>, <span class="number">$1C</span>, <span class="number">$FC</span>, <span class="number">$10</span>, <span class="number">$F0</span>, <span class="number">$B0</span>, <span class="number">$F0</span>, <span class="number">$A0</span>, <span class="number">$E0</span>, <span class="number">$A0</span>, <span class="number">$E0</span>, <span class="number">$70</span>, <span class="number">$70</span>, <span class="number">$00</span>, <span class="number">$00</span> <span class="comment">; tile 7</span>
+<span class="label">hero_tiles_end</span>::
+
+<span class="label">hero_frames</span>::
+    <span class="directive">dw</span> hero_frame0
+    <span class="directive">dw</span> hero_frame1
+
+<span class="label">hero_durations</span>::
+    <span class="directive">db</span> <span class="number">12</span>, <span class="number">12</span>
+
+<span class="label">hero_frame0</span>:
+    <span class="directive">db</span> <span class="number">2</span>
+    <span class="directive">db</span> <span class="number">0</span>, <span class="number">0</span>, <span class="number">0</span>, <span class="number">$00</span>
+    <span class="directive">db</span> <span class="number">0</span>, <span class="number">8</span>, <span class="number">2</span>, <span class="number">$00</span>
+<span class="label">hero_frame1</span>:
+    <span class="directive">db</span> <span class="number">2</span>
+    <span class="directive">db</span> <span class="number">0</span>, <span class="number">0</span>, <span class="number">4</span>, <span class="number">$00</span>
+    <span class="directive">db</span> <span class="number">0</span>, <span class="number">8</span>, <span class="number">6</span>, <span class="number">$00</span></code></pre>
+<ul>
+<li><code>hero_tiles</code> is the tile data of all frames, one after another. Sprites and the background share the tile memory at <code>$8000</code>; the sprite's tile numbers count from the first tile you load.</li>
+<li><code>hero_frames</code> is a table of pointers, one per frame. Each points to a list: first the number of sprites, then for each sprite four bytes: <strong>y offset, x offset, tile number, attributes</strong>. The offsets are from the top-left corner of the whole character. In 8&times;16 mode the tile number of a sprite is the first of its two tiles.</li>
+<li><code>hero_durations</code> holds how many frames (1/60 s) each animation frame stays on screen.</li>
+<li>The attribute byte holds the palette (bit 4), flip bits (6 and 5) and the priority bit (bit 7). The editor sets the palette and priority you chose; flipping is up to the program, which can <code>OR</code> a flip bit into the byte when it copies it.</li>
+</ul>
+</section>
+
+<section id="program">
+<h2>The Program: sprite_demo.asm</h2>
+<h3>Setting up</h3>
+<p>The tiles are copied to <code>$8000</code> with the LCD off, as in the first example. The sprite table contains random bytes when the console starts, so the program also switches all 40 sprites off by filling it with zeros (a sprite with Y = 0 is off the top of the screen). It then sets <code>rLCDC</code> bit 2 (<code>LCDCF_OBJ16</code>) to select 8&times;16 sprites, since that is how the hero was exported, and <code>LCDCF_OBJON</code> to show sprites. There is no <code>LCDCF_BGON</code>, so the background is off and the screen is plain white behind the hero.</p>
+<pre><code><span class="label">Start</span>:
+    <span class="keyword">call</span> LcdOff
+
+    <span class="keyword">ld</span> hl, hero_tiles
+    <span class="keyword">ld</span> de, VRAM_TILES
+    <span class="keyword">ld</span> bc, hero_tiles_end - hero_tiles
+    <span class="keyword">call</span> CopyBytes
+
+    <span class="keyword">ld</span> hl, OAM_RAM           <span class="comment">; the sprite table starts with random data: switch all 40 sprites off</span>
+    <span class="keyword">ld</span> bc, OAM_SIZE
+    <span class="keyword">xor</span> a
+    <span class="keyword">call</span> FillBytes
+
+    <span class="keyword">xor</span> a
+    <span class="keyword">ld</span> [wFrame], a
+    <span class="keyword">ld</span> a, <span class="number">72</span>
+    <span class="keyword">ld</span> [wX], a
+    <span class="keyword">ld</span> a, <span class="number">64</span>
+    <span class="keyword">ld</span> [wY], a
+    <span class="keyword">ld</span> a, [hero_durations]   <span class="comment">; the first frame stays for hero_durations[0] frames</span>
+    <span class="keyword">ld</span> [wTimer], a
+
+    <span class="keyword">ld</span> a, <span class="number">%11100100</span>
+    <span class="keyword">ldh</span> [rOBP0], a           <span class="comment">; sprite palette (colour 0 is transparent)</span>
+    <span class="keyword">ld</span> a, LCDCF_ON | LCDCF_OBJ16 | LCDCF_OBJON
+    <span class="keyword">ldh</span> [rLCDC], a           <span class="comment">; the Sprite Editor exported 8x16 sprites: turn on 8x16 mode</span></code></pre>
+<h3>The main loop</h3>
+<p>Every pass starts with <code>WaitFrame</code>, which returns at the start of VBlank. That is the time the sprite table can safely be written. The rest of the frame is for working out what happens next.</p>
+<pre><code><span class="label">.loop</span>:
+    <span class="keyword">call</span> WaitFrame
+    <span class="keyword">call</span> DrawSprite          <span class="comment">; the sprite table (OAM) may only be written during VBlank</span>
+    <span class="keyword">call</span> ReadJoypad
+    <span class="keyword">call</span> Move
+    <span class="keyword">call</span> Animate
+    <span class="keyword">jr</span> .loop</code></pre>
+<h3>Writing the sprite table</h3>
+<p><code>DrawSprite</code> looks up the current frame in <code>hero_frames</code> and copies each entry to the sprite table, adding the hero's position. The hardware subtracts 16 from every Y and 8 from every X, so that a sprite can slide in from off screen; the program adds them back. When it has copied the entries it clears the rest of the table, because the next frame may have fewer sprites.</p>
+<pre><code><span class="comment">; Write the OAM entries of the current frame, moved to the sprite's position.</span>
+<span class="comment">; Each entry in the export is 4 bytes: y offset, x offset, tile, attributes.</span>
+<span class="label">DrawSprite</span>:
+    <span class="keyword">ld</span> a, [wFrame]
+    <span class="keyword">add</span> a, a                 <span class="comment">; hero_frames holds 2-byte pointers</span>
+    <span class="keyword">ld</span> e, a
+    <span class="keyword">ld</span> d, <span class="number">0</span>
+    <span class="keyword">ld</span> hl, hero_frames
+    <span class="keyword">add</span> hl, de
+    <span class="keyword">ld</span> a, [hl+]
+    <span class="keyword">ld</span> h, [hl]
+    <span class="keyword">ld</span> l, a                  <span class="comment">; HL = the entries of this frame</span>
+    <span class="keyword">ld</span> a, [hl+]              <span class="comment">; first byte: how many entries</span>
+    <span class="keyword">ld</span> b, a
+    <span class="keyword">ld</span> de, OAM_RAM
+    <span class="keyword">or</span> a
+    <span class="keyword">jr</span> z, .clearRest
+<span class="label">.entry</span>:
+    <span class="keyword">ld</span> a, [wY]
+    <span class="keyword">add</span> a, [hl]              <span class="comment">; + y offset</span>
+    <span class="keyword">add</span> a, <span class="number">16</span>                <span class="comment">; the hardware subtracts 16 from Y ...</span>
+    <span class="keyword">ld</span> [de], a
+    <span class="keyword">inc</span> hl
+    <span class="keyword">inc</span> de
+    <span class="keyword">ld</span> a, [wX]
+    <span class="keyword">add</span> a, [hl]              <span class="comment">; + x offset</span>
+    <span class="keyword">add</span> a, <span class="number">8</span>                 <span class="comment">; ... and 8 from X</span>
+    <span class="keyword">ld</span> [de], a
+    <span class="keyword">inc</span> hl
+    <span class="keyword">inc</span> de
+    <span class="keyword">ld</span> a, [hl+]              <span class="comment">; tile number</span>
+    <span class="keyword">ld</span> [de], a
+    <span class="keyword">inc</span> de
+    <span class="keyword">ld</span> a, [hl+]              <span class="comment">; attributes (palette, priority, flip)</span>
+    <span class="keyword">ld</span> [de], a
+    <span class="keyword">inc</span> de
+    <span class="keyword">dec</span> b
+    <span class="keyword">jr</span> nz, .entry
+<span class="label">.clearRest</span>:                  <span class="comment">; switch off every sprite we did not use</span>
+    <span class="keyword">ld</span> a, e
+    <span class="keyword">cp</span> OAM_SIZE
+    <span class="keyword">ret</span> nc
+    <span class="keyword">xor</span> a
+    <span class="keyword">ld</span> [de], a
+    <span class="keyword">inc</span> de
+    <span class="keyword">jr</span> .clearRest</code></pre>
+<h3>Animating and moving</h3>
+<p><code>Animate</code> counts down a timer; when it reaches zero it moves to the next frame (wrapping at <code>HERO_FRAME_COUNT</code>) and loads that frame's duration from <code>hero_durations</code>. <code>Move</code> reads the keys that <code>ReadJoypad</code> stored in <code>wJoypad</code> and changes the position by one pixel per frame.</p>
+<pre><code><span class="comment">; Move the sprite one pixel per frame in the direction of the pressed keys</span>
+<span class="label">Move</span>:
+    <span class="keyword">ld</span> a, [wJoypad]
+    <span class="keyword">ld</span> b, a
+    <span class="keyword">bit</span> PADB_RIGHT, b
+    <span class="keyword">jr</span> z, .notRight
+    <span class="keyword">ld</span> hl, wX
+    <span class="keyword">inc</span> [hl]
+<span class="label">.notRight</span>:
+    <span class="keyword">bit</span> PADB_LEFT, b
+    <span class="keyword">jr</span> z, .notLeft
+    <span class="keyword">ld</span> hl, wX
+    <span class="keyword">dec</span> [hl]
+<span class="label">.notLeft</span>:
+    <span class="keyword">bit</span> PADB_DOWN, b
+    <span class="keyword">jr</span> z, .notDown
+    <span class="keyword">ld</span> hl, wY
+    <span class="keyword">inc</span> [hl]
+<span class="label">.notDown</span>:
+    <span class="keyword">bit</span> PADB_UP, b
+    <span class="keyword">ret</span> z
+    <span class="keyword">ld</span> hl, wY
+    <span class="keyword">dec</span> [hl]
+    <span class="keyword">ret</span>
+
+<span class="comment">; Count down the frame timer and switch to the next animation frame when it runs out</span>
+<span class="label">Animate</span>:
+    <span class="keyword">ld</span> a, [wTimer]
+    <span class="keyword">dec</span> a
+    <span class="keyword">ld</span> [wTimer], a
+    <span class="keyword">ret</span> nz
+    <span class="keyword">ld</span> a, [wFrame]
+    <span class="keyword">inc</span> a
+    <span class="keyword">cp</span> HERO_FRAME_COUNT
+    <span class="keyword">jr</span> c, .noWrap
+    <span class="keyword">xor</span> a                    <span class="comment">; after the last frame, start again</span>
+<span class="label">.noWrap</span>:
+    <span class="keyword">ld</span> [wFrame], a
+    <span class="keyword">ld</span> e, a
+    <span class="keyword">ld</span> d, <span class="number">0</span>
+    <span class="keyword">ld</span> hl, hero_durations
+    <span class="keyword">add</span> hl, de
+    <span class="keyword">ld</span> a, [hl]
+    <span class="keyword">ld</span> [wTimer], a
+    <span class="keyword">ret</span></code></pre>
+</section>
+
+<section id="source">
+<h2>Complete Source</h2>
+<pre><code><span class="comment">; sprite_demo.asm - animate and move the sprite exported from the Sprite Editor</span>
+<span class="comment">;</span>
+<span class="comment">; Export "hero" from the Sprite Editor (Export RGBDS) and put hero.asm next to this file.</span>
+<span class="comment">; It provides hero_tiles, hero_frames (a table of pointers to the OAM entries of each frame),</span>
+<span class="comment">; hero_durations and HERO_FRAME_COUNT. Use the direction keys to move the hero.</span>
+
+<span class="directive">INCLUDE</span> <span class="string">"hardware.inc"</span>
+<span class="directive">INCLUDE</span> <span class="string">"hero.asm"</span>
+
+<span class="directive">SECTION</span> <span class="string">"Header"</span>, ROM0[<span class="number">$100</span>]
+    <span class="keyword">nop</span>
+    <span class="keyword">jp</span> Start
+    <span class="directive">ds</span> <span class="number">$150</span> - @, <span class="number">0</span>
+
+<span class="directive">SECTION</span> <span class="string">"SpriteVars"</span>, WRAM0
+<span class="label">wFrame</span>: <span class="directive">DS</span> <span class="number">1</span>                 <span class="comment">; which animation frame is showing</span>
+<span class="label">wTimer</span>: <span class="directive">DS</span> <span class="number">1</span>                 <span class="comment">; frames left before the next animation frame</span>
+<span class="label">wX</span>:     <span class="directive">DS</span> <span class="number">1</span>                 <span class="comment">; position of the sprite's top-left corner on the screen</span>
+<span class="label">wY</span>:     <span class="directive">DS</span> <span class="number">1</span>
+
+<span class="directive">SECTION</span> <span class="string">"Main"</span>, ROM0[<span class="number">$150</span>]
+<span class="label">Start</span>:
+    <span class="keyword">call</span> LcdOff
+
+    <span class="keyword">ld</span> hl, hero_tiles
+    <span class="keyword">ld</span> de, VRAM_TILES
+    <span class="keyword">ld</span> bc, hero_tiles_end - hero_tiles
+    <span class="keyword">call</span> CopyBytes
+
+    <span class="keyword">ld</span> hl, OAM_RAM           <span class="comment">; the sprite table starts with random data: switch all 40 sprites off</span>
+    <span class="keyword">ld</span> bc, OAM_SIZE
+    <span class="keyword">xor</span> a
+    <span class="keyword">call</span> FillBytes
+
+    <span class="keyword">xor</span> a
+    <span class="keyword">ld</span> [wFrame], a
+    <span class="keyword">ld</span> a, <span class="number">72</span>
+    <span class="keyword">ld</span> [wX], a
+    <span class="keyword">ld</span> a, <span class="number">64</span>
+    <span class="keyword">ld</span> [wY], a
+    <span class="keyword">ld</span> a, [hero_durations]   <span class="comment">; the first frame stays for hero_durations[0] frames</span>
+    <span class="keyword">ld</span> [wTimer], a
+
+    <span class="keyword">ld</span> a, <span class="number">%11100100</span>
+    <span class="keyword">ldh</span> [rOBP0], a           <span class="comment">; sprite palette (colour 0 is transparent)</span>
+    <span class="keyword">ld</span> a, LCDCF_ON | LCDCF_OBJ16 | LCDCF_OBJON
+    <span class="keyword">ldh</span> [rLCDC], a           <span class="comment">; the Sprite Editor exported 8x16 sprites: turn on 8x16 mode</span>
+
+<span class="label">.loop</span>:
+    <span class="keyword">call</span> WaitFrame
+    <span class="keyword">call</span> DrawSprite          <span class="comment">; the sprite table (OAM) may only be written during VBlank</span>
+    <span class="keyword">call</span> ReadJoypad
+    <span class="keyword">call</span> Move
+    <span class="keyword">call</span> Animate
+    <span class="keyword">jr</span> .loop
+
+<span class="comment">; Move the sprite one pixel per frame in the direction of the pressed keys</span>
+<span class="label">Move</span>:
+    <span class="keyword">ld</span> a, [wJoypad]
+    <span class="keyword">ld</span> b, a
+    <span class="keyword">bit</span> PADB_RIGHT, b
+    <span class="keyword">jr</span> z, .notRight
+    <span class="keyword">ld</span> hl, wX
+    <span class="keyword">inc</span> [hl]
+<span class="label">.notRight</span>:
+    <span class="keyword">bit</span> PADB_LEFT, b
+    <span class="keyword">jr</span> z, .notLeft
+    <span class="keyword">ld</span> hl, wX
+    <span class="keyword">dec</span> [hl]
+<span class="label">.notLeft</span>:
+    <span class="keyword">bit</span> PADB_DOWN, b
+    <span class="keyword">jr</span> z, .notDown
+    <span class="keyword">ld</span> hl, wY
+    <span class="keyword">inc</span> [hl]
+<span class="label">.notDown</span>:
+    <span class="keyword">bit</span> PADB_UP, b
+    <span class="keyword">ret</span> z
+    <span class="keyword">ld</span> hl, wY
+    <span class="keyword">dec</span> [hl]
+    <span class="keyword">ret</span>
+
+<span class="comment">; Count down the frame timer and switch to the next animation frame when it runs out</span>
+<span class="label">Animate</span>:
+    <span class="keyword">ld</span> a, [wTimer]
+    <span class="keyword">dec</span> a
+    <span class="keyword">ld</span> [wTimer], a
+    <span class="keyword">ret</span> nz
+    <span class="keyword">ld</span> a, [wFrame]
+    <span class="keyword">inc</span> a
+    <span class="keyword">cp</span> HERO_FRAME_COUNT
+    <span class="keyword">jr</span> c, .noWrap
+    <span class="keyword">xor</span> a                    <span class="comment">; after the last frame, start again</span>
+<span class="label">.noWrap</span>:
+    <span class="keyword">ld</span> [wFrame], a
+    <span class="keyword">ld</span> e, a
+    <span class="keyword">ld</span> d, <span class="number">0</span>
+    <span class="keyword">ld</span> hl, hero_durations
+    <span class="keyword">add</span> hl, de
+    <span class="keyword">ld</span> a, [hl]
+    <span class="keyword">ld</span> [wTimer], a
+    <span class="keyword">ret</span>
+
+<span class="comment">; Write the OAM entries of the current frame, moved to the sprite's position.</span>
+<span class="comment">; Each entry in the export is 4 bytes: y offset, x offset, tile, attributes.</span>
+<span class="label">DrawSprite</span>:
+    <span class="keyword">ld</span> a, [wFrame]
+    <span class="keyword">add</span> a, a                 <span class="comment">; hero_frames holds 2-byte pointers</span>
+    <span class="keyword">ld</span> e, a
+    <span class="keyword">ld</span> d, <span class="number">0</span>
+    <span class="keyword">ld</span> hl, hero_frames
+    <span class="keyword">add</span> hl, de
+    <span class="keyword">ld</span> a, [hl+]
+    <span class="keyword">ld</span> h, [hl]
+    <span class="keyword">ld</span> l, a                  <span class="comment">; HL = the entries of this frame</span>
+    <span class="keyword">ld</span> a, [hl+]              <span class="comment">; first byte: how many entries</span>
+    <span class="keyword">ld</span> b, a
+    <span class="keyword">ld</span> de, OAM_RAM
+    <span class="keyword">or</span> a
+    <span class="keyword">jr</span> z, .clearRest
+<span class="label">.entry</span>:
+    <span class="keyword">ld</span> a, [wY]
+    <span class="keyword">add</span> a, [hl]              <span class="comment">; + y offset</span>
+    <span class="keyword">add</span> a, <span class="number">16</span>                <span class="comment">; the hardware subtracts 16 from Y ...</span>
+    <span class="keyword">ld</span> [de], a
+    <span class="keyword">inc</span> hl
+    <span class="keyword">inc</span> de
+    <span class="keyword">ld</span> a, [wX]
+    <span class="keyword">add</span> a, [hl]              <span class="comment">; + x offset</span>
+    <span class="keyword">add</span> a, <span class="number">8</span>                 <span class="comment">; ... and 8 from X</span>
+    <span class="keyword">ld</span> [de], a
+    <span class="keyword">inc</span> hl
+    <span class="keyword">inc</span> de
+    <span class="keyword">ld</span> a, [hl+]              <span class="comment">; tile number</span>
+    <span class="keyword">ld</span> [de], a
+    <span class="keyword">inc</span> de
+    <span class="keyword">ld</span> a, [hl+]              <span class="comment">; attributes (palette, priority, flip)</span>
+    <span class="keyword">ld</span> [de], a
+    <span class="keyword">inc</span> de
+    <span class="keyword">dec</span> b
+    <span class="keyword">jr</span> nz, .entry
+<span class="label">.clearRest</span>:                  <span class="comment">; switch off every sprite we did not use</span>
+    <span class="keyword">ld</span> a, e
+    <span class="keyword">cp</span> OAM_SIZE
+    <span class="keyword">ret</span> nc
+    <span class="keyword">xor</span> a
+    <span class="keyword">ld</span> [de], a
+    <span class="keyword">inc</span> de
+    <span class="keyword">jr</span> .clearRest
+
+    <span class="directive">INCLUDE</span> <span class="string">"util.inc"</span></code></pre>
+</section>
+
+<section id="running">
+<h2>Assembling and Running</h2>
+<pre><code>make sprite/sprite_demo.gb       # assemble, link and fix the header
+make run-sprite/sprite_demo      # ...and open it in mGBA</code></pre>
+<p>The hero walks on the spot; use the direction keys (arrow keys in mGBA) to move it. The program does not stop it leaving the screen: try adding limits to <code>Move</code>.</p>
+<p>Things to try: draw a third frame in the editor and export again (only the file changes, not the program); switch the sprite to <em>OBP1</em> and set <code>rOBP1</code> in the program; set the <em>behind background</em> option, turn the background on and see the hero disappear behind anything that is not shade 0.</p>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,48 @@
+title: Font Example: Printing Text with an Exported Font on a Game Boy
+heading: Font: Printing Text with an Exported Font
+subtitle: From the Font Editor to a typed message on a Game Boy screen
+---
+<section id="introduction">
+<h2>Introduction</h2>
+<p>On the ZX Spectrum the ROM has a character set and routines to print text. The Game Boy has neither: there is no text mode and no ROM routine. A <strong>font is just 96 tiles</strong> (the characters from ASCII 32, the space, to 127) that you copy to VRAM, and printing a letter means writing its tile number into the background map. If the font is loaded at tile 0, the tile for a character is simply <em>the character code minus 32</em>.</p>
+<p>This example builds on <a href="/tile_examples.html">Tiles</a> (tile data in VRAM) and <a href="/map_examples.html">Map</a> (the background map).</p>
+</section>
+
+<section id="exporting">
+<h2>Exporting from the Editor</h2>
+<ol class="steps">
+<li>In the <strong>Font Editor</strong>, edit the glyphs. It starts with a built-in font; <em>Load starter font</em> restores it and <em>Reset to starter</em> restores one glyph. The preview shows your text the way a Game Boy screen lays it out, 20 characters to a row. <code>gbfont_font.json</code> is the font used here.</li>
+<li>Click <strong>Export RGBDS (.asm)</strong> and name the file <code>gbfont</code>. <em>Export .2bpp</em> gives the 1536 bytes of tile data; <em>Export .1bpp</em> gives 768 bytes (8 per glyph) for tools that expand 1-bit fonts themselves.</li>
+</ol>
+</section>
+
+<section id="exported-data">
+<h2>The Exported Data: gbfont.asm</h2>
+<p>All 96 glyphs are always exported, in ASCII order, each as an ordinary 16-byte tile with its code and character in a comment. The beginning of the file:</p>
+[[lines font/gbfont.asm 1-13]]
+<p><code>GBFONT_FIRST_CHAR</code> is the code of the first glyph (32), and the end label <code>gbfont_font_end</code> lets the program work out the size. A font often only uses shades 0 and 3, but all four are available for shadows and outlines.</p>
+</section>
+
+<section id="program">
+<h2>The Program: font_demo.asm</h2>
+<h3>Loading the font</h3>
+<p>The font is copied to tile 0 onwards and the background map is cleared with tile 0, which is the space character, so the screen starts blank. The program then switches the LCD on and starts typing.</p>
+[[part font/font_demo.asm | Start: | ld hl, Message]]
+<h3>Typing the message</h3>
+<p>A pointer (<code>HL</code>) walks along a zero-terminated message and another (<code>DE</code>) along the background map. For each character the program subtracts <code>GBFONT_FIRST_CHAR</code> to get the tile number, waits a few frames, and stores it in the map. It waits by calling <code>WaitFrame</code>, which returns at the start of VBlank, the moment VRAM is safe to write while the LCD is on. Code 10 starts a new line: the low five bits of a map address are the column, so clearing them and adding 32 moves to the start of the next row.</p>
+[[part font/font_demo.asm | ld hl, Message | INCLUDE "util.inc"]]
+</section>
+
+<section id="source">
+<h2>Complete Source</h2>
+[[file font/font_demo.asm]]
+</section>
+
+<section id="running">
+<h2>Assembling and Running</h2>
+[[text]]
+make font/font_demo.gb       # assemble, link and fix the header
+make run-font/font_demo      # ...and open it in mGBA
+[[/text]]
+<p>Things to try: change the message (only the characters from space to <code>~</code> have glyphs); draw a different <code>A</code> in the editor and export again; load the font at a tile number other than 0 and add that number in the program; or print a number by turning a value into digits (character <code>'0'</code> is code 48).</p>
+</section>

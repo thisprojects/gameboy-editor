@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Music Example: Playing an Exported Song on a Game Boy</title>
+<style>
+/* The four shades of the original Game Boy LCD, plus two extra tints for readable text.
+   (Copied from the Game Boy book, whose tests check every text/background pair for WCAG AA contrast.) */
+:root {
+    --lcd-lightest: #9bbc0f;
+    --lcd-light: #8bac0f;
+    --lcd-dark: #306230;
+    --lcd-darkest: #0f380f;
+    --bezel: #4b4d5e;
+
+    --bg: #9bbc0f;            /* page: the lightest LCD green */
+    --surface: #adcb2c;       /* panels: a slightly paler green */
+    --text: #0f380f;          /* body text: the darkest LCD green */
+    --text-dim: #214a18;
+    --heading: #0f380f;
+    --rule: #306230;
+    --link: #0b2e0b;
+
+    --code-bg: #0f380f;       /* code blocks: an inverted screen */
+    --code-border: #306230;
+    --code-text: #d3eb78;
+    --code-comment: #9bbc0f;
+    --code-keyword: #f2fba8;
+    --code-label: #c8e85a;
+    --code-string: #b5d842;
+    --code-number: #e4f58e;
+    --code-directive: #a9cf3a;
+    --inline-code-bg: #0f380f;
+    --inline-code-text: #d3eb78;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Courier New', Courier, 'Lucida Console', monospace;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem;
+}
+h1, h2, h3 { color: var(--heading); margin-top: 2.5rem; margin-bottom: 1rem; letter-spacing: 0.02em; }
+h1 { font-size: 2rem; border-bottom: 4px solid var(--rule); padding-bottom: 0.5rem; }
+h2 { font-size: 1.5rem; border-bottom: 2px dashed var(--rule); padding-bottom: 0.3rem; }
+h3 { font-size: 1.2rem; }
+h3::before { content: "\25B6\00a0"; }   /* a little menu cursor */
+p { margin-bottom: 1rem; }
+ul, ol { margin: 0 0 1rem 1.5rem; }
+li { margin-bottom: 0.3rem; }
+strong { font-weight: 700; }
+.title-block {
+    text-align: center;
+    padding: 2.5rem 1rem 1.5rem;
+    margin-bottom: 2rem;
+    background: var(--bezel);
+    border-radius: 14px 14px 56px 14px;
+    box-shadow: 0 4px 0 #2d2f3b;
+}
+.title-block .screen {
+    background: var(--lcd-lightest);
+    border: 6px solid #2d2f3b;
+    border-radius: 6px;
+    margin: 0 auto;
+    max-width: 640px;
+    padding: 1.5rem 1rem;
+    box-shadow: inset 0 0 0 3px var(--lcd-light);
+}
+.title-block h1 { border: none; font-size: 2.2rem; margin-top: 0; color: var(--lcd-darkest); }
+.title-block .subtitle { font-size: 1.1rem; color: var(--text-dim); margin-top: 0.5rem; }
+.title-block .assembler { font-size: 0.9rem; color: var(--text); margin-top: 1rem; font-weight: 700; }
+.title-block .bezel-text { color: #ffffff; font-size: 0.8rem; letter-spacing: 0.15em; margin-top: 1rem; }
+nav#toc {
+    background: var(--surface);
+    border: 3px solid var(--rule);
+    border-radius: 6px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 3rem;
+}
+nav#toc h2 { margin-top: 0; }
+nav#toc ul { list-style: none; margin-left: 0; padding-left: 0; }
+nav#toc > ul > li { margin-bottom: 0.4rem; }
+nav#toc ul ul { padding-left: 1.5rem; }
+nav#toc ul ul li { margin-bottom: 0.2rem; }
+a { color: var(--link); text-decoration: underline; }
+a:hover, a:focus { background: var(--lcd-darkest); color: var(--lcd-lightest); }
+pre {
+    background: var(--code-bg);
+    border: 3px solid var(--code-border);
+    border-radius: 6px;
+    padding: 1rem 1.2rem;
+    overflow-x: auto;
+    margin-bottom: 1.2rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+code {
+    font-family: 'Courier New', Courier, 'Lucida Console', monospace;
+    background: var(--inline-code-bg);
+    color: var(--inline-code-text);
+    padding: 0 0.3em;
+    border-radius: 3px;
+}
+pre code { background: none; color: var(--code-text); padding: 0; }
+kbd { background: var(--lcd-darkest); color: var(--lcd-lightest); padding: 0 0.35em; border-radius: 3px; font-family: inherit; }
+.comment { color: var(--code-comment); }
+.keyword { color: var(--code-keyword); font-weight: 700; }
+.label { color: var(--code-label); text-decoration: underline; }
+.string { color: var(--code-string); }
+.number { color: var(--code-number); }
+.directive { color: var(--code-directive); font-weight: 700; }
+.bold-text { font-weight: 700; }
+.note {
+    background: var(--surface);
+    border-left: 8px solid var(--rule);
+    padding: 0.8rem 1rem;
+    margin-bottom: 1.2rem;
+}
+.back-to-top {
+    display: inline-block;
+    margin-top: 0.3rem;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+}
+section { margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid var(--rule); }
+section:last-child { border-bottom: none; }
+table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; }
+th { text-align: left; padding: 0.5rem; color: var(--heading); border-bottom: 3px solid var(--rule); }
+td { padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+tr.highlight-row { background: var(--surface); }
+@media (max-width: 600px) { body { padding: 1rem 0.8rem; } .title-block h1 { font-size: 1.6rem; } }
+
+/* --- additions for the editor's example pages --- */
+nav.examples-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.3rem 1.1rem;
+    background: var(--surface);
+    border: 3px solid var(--rule);
+    border-radius: 6px;
+    padding: 0.7rem 1.2rem;
+    margin-bottom: 2rem;
+}
+nav.examples-nav strong { color: var(--heading); }
+nav.examples-nav a[aria-current="page"] { background: var(--lcd-darkest); color: var(--lcd-lightest); text-decoration: none; padding: 0 0.4em; }
+.steps > li { margin-bottom: 0.6rem; }
+</style>
+</head>
+<body>
+
+<div class="title-block">
+<div class="screen">
+<h1>Music: Playing an Exported Song</h1>
+<div class="subtitle">From the Music Editor to sound from the Game Boy's four channels</div>
+</div>
+<div class="bezel-text">DOT MATRIX &middot; 160 &times; 144 &middot; 4 SHADES</div>
+</div>
+
+<nav class="examples-nav" aria-label="Documentation">
+<strong>Examples:</strong> <a href="/tile_examples.html">Tiles</a>
+<a href="/sprite_examples.html">Sprites</a>
+<a href="/map_examples.html">Map</a>
+<a href="/font_examples.html">Font</a>
+<a href="/level_examples.html">Level</a>
+<a href="/music_examples.html" aria-current="page">Music</a>
+<span>&middot;</span> <a href="/gameboy_book.html">Game Boy Assembly Introduction</a>
+</nav>
+
+<section id="introduction">
+<h2>Introduction</h2>
+<p>The ZX Spectrum 128K plays music on the AY-3-8912 chip; the Game Boy has its own sound chip with four channels. <strong>Pulse 1</strong> and <strong>Pulse 2</strong> make square-like waves with a choice of 4 duty cycles (Pulse 1 can also sweep its pitch up or down). The <strong>Wave</strong> channel plays a 32-sample, 4-bit waveform that you draw. The <strong>Noise</strong> channel makes noise from a shift register, for drums and effects. Volume fades come from a hardware <em>envelope</em> on the pulse and noise channels, so a note starts and fades with no more work for the CPU.</p>
+<p>A tracker song is a list of patterns, each a grid of notes by rows. The Music Editor turns every row into the <strong>sound register writes</strong> that produce those notes, and the exported player just replays them, once per frame. The editor's preview uses the same writes, so what you hear is what the console gets. The programs on the other pages, starting with <a href="/tile_examples.html">Tiles</a>, share the <a href="/tile_examples.html#helpers">helper routines</a> explained there.</p>
+</section>
+
+<section id="exporting">
+<h2>Exporting from the Editor</h2>
+<ol class="steps">
+<li>In the <strong>Music Editor</strong>, click a cell and play notes on the keyboard (<kbd>Z</kbd>&ndash;<kbd>M</kbd>, and <kbd>Q</kbd>&ndash;<kbd>U</kbd> one octave up). Each channel has its own instrument and octave, used for the notes you enter next (notes already entered keep theirs; change a single note by clicking it). <strong>Instruments&hellip;</strong> edits duty cycles, envelopes, the pulse sweep, the drawn waveform and the noise type. On the noise channel the note sets the pitch of the noise.</li>
+<li>Set the <em>speed</em>: the number of video frames (1/60 s) per row. Build the order the patterns play in. The song loops.</li>
+<li>Click <strong>Export RGBDS (.asm)</strong> and name the file <code>song</code>. <code>song_music.json</code> is the two-pattern song used here: load it with <em>Load project</em>. (<em>Export C</em> writes a header with the same data and player for GBDK.)</li>
+</ol>
+</section>
+
+<section id="exported-data">
+<h2>The Exported Data: song.asm</h2>
+<p>The file starts with the speed and sizes, and a few bytes of RAM for the player:</p>
+<pre><code><span class="comment">; song - 2 pattern(s), order length 2, 6 frame(s) per row</span>
+<span class="comment">;</span>
+<span class="comment">; Usage: call song_init once, then call song_update once per frame (for example from your VBlank</span>
+<span class="comment">; handler). Call song_stop to silence the sound chip. The song loops. Needs RGBDS 0.5.0 or later.</span>
+<span class="comment">;</span>
+<span class="comment">; The data is a stream of sound register writes: per row a write count, then (register, value) pairs</span>
+<span class="comment">; where the register is the low byte of $FF00+n. The player simply replays them.</span>
+
+<span class="directive">DEF</span> SONG_TICKS_PER_ROW EQU <span class="number">6</span>
+<span class="directive">DEF</span> SONG_ORDER_LENGTH EQU <span class="number">2</span>
+<span class="directive">DEF</span> SONG_PATTERN_COUNT EQU <span class="number">2</span>
+
+<span class="directive">SECTION</span> <span class="string">"song_music_ram"</span>, WRAM0
+<span class="label">song_tick</span>: <span class="directive">db</span>
+<span class="label">song_rows_left</span>: <span class="directive">db</span>
+<span class="label">song_order_pos</span>: <span class="directive">db</span>
+<span class="label">song_row_ptr</span>: <span class="directive">dw</span></code></pre>
+<p>The song itself is the order list, a table of the patterns, and then each pattern as a stream. A pattern starts with its number of rows; each row starts with the number of register writes it needs, followed by that many pairs of <em>register</em> and <em>value</em> (the register is the low byte of its address, <code>$FF00+n</code>). The first row of the first pattern starts a note on all four channels: Pulse 1 (<code>NR10</code>&ndash;<code>NR14</code>), Pulse 2 (<code>NR21</code>&ndash;<code>NR24</code>), the wave channel, which first has its waveform copied into wave RAM, and the noise channel (<code>NR42</code>&ndash;<code>NR44</code>) for a kick drum:</p>
+<pre><code><span class="label">song_order</span>::
+    <span class="directive">db</span> <span class="number">0</span>, <span class="number">1</span>
+
+<span class="label">song_patterns</span>::
+    <span class="directive">dw</span> song_pattern0
+    <span class="directive">dw</span> song_pattern1
+
+<span class="label">song_pattern0</span>:
+    <span class="directive">db</span> <span class="number">16</span> <span class="comment">; rows</span>
+    <span class="directive">db</span> <span class="number">33</span> <span class="comment">; row 0</span>
+    <span class="directive">db</span> <span class="number">$10</span>, <span class="number">$08</span> <span class="comment">; NR10</span>
+    <span class="directive">db</span> <span class="number">$11</span>, <span class="number">$80</span> <span class="comment">; NR11</span>
+    <span class="directive">db</span> <span class="number">$12</span>, <span class="number">$F0</span> <span class="comment">; NR12</span>
+    <span class="directive">db</span> <span class="number">$13</span>, <span class="number">$06</span> <span class="comment">; NR13</span>
+    <span class="directive">db</span> <span class="number">$14</span>, <span class="number">$87</span> <span class="comment">; NR14</span>
+    <span class="directive">db</span> <span class="number">$16</span>, <span class="number">$80</span> <span class="comment">; NR21</span>
+    <span class="directive">db</span> <span class="number">$17</span>, <span class="number">$F2</span> <span class="comment">; NR22</span>
+    <span class="directive">db</span> <span class="number">$18</span>, <span class="number">$0B</span> <span class="comment">; NR23</span>
+    <span class="directive">db</span> <span class="number">$19</span>, <span class="number">$86</span> <span class="comment">; NR24</span>
+    <span class="directive">db</span> <span class="number">$1A</span>, <span class="number">$00</span> <span class="comment">; NR30</span>
+    <span class="directive">db</span> <span class="number">$30</span>, <span class="number">$01</span> <span class="comment">; wave RAM 0</span>
+    <span class="directive">db</span> <span class="number">$31</span>, <span class="number">$23</span> <span class="comment">; wave RAM 1</span>
+    <span class="directive">db</span> <span class="number">$32</span>, <span class="number">$45</span> <span class="comment">; wave RAM 2</span>
+    <span class="directive">db</span> <span class="number">$33</span>, <span class="number">$67</span> <span class="comment">; wave RAM 3</span>
+    <span class="directive">db</span> <span class="number">$34</span>, <span class="number">$89</span> <span class="comment">; wave RAM 4</span>
+    <span class="directive">db</span> <span class="number">$35</span>, <span class="number">$AB</span> <span class="comment">; wave RAM 5</span>
+    <span class="directive">db</span> <span class="number">$36</span>, <span class="number">$CD</span> <span class="comment">; wave RAM 6</span>
+    <span class="directive">db</span> <span class="number">$37</span>, <span class="number">$EF</span> <span class="comment">; wave RAM 7</span>
+    <span class="directive">db</span> <span class="number">$38</span>, <span class="number">$FE</span> <span class="comment">; wave RAM 8</span>
+    <span class="directive">db</span> <span class="number">$39</span>, <span class="number">$DC</span> <span class="comment">; wave RAM 9</span>
+    <span class="directive">db</span> <span class="number">$3A</span>, <span class="number">$BA</span> <span class="comment">; wave RAM 10</span>
+    <span class="directive">db</span> <span class="number">$3B</span>, <span class="number">$98</span> <span class="comment">; wave RAM 11</span>
+    <span class="directive">db</span> <span class="number">$3C</span>, <span class="number">$76</span> <span class="comment">; wave RAM 12</span>
+    <span class="directive">db</span> <span class="number">$3D</span>, <span class="number">$54</span> <span class="comment">; wave RAM 13</span>
+    <span class="directive">db</span> <span class="number">$3E</span>, <span class="number">$32</span> <span class="comment">; wave RAM 14</span>
+    <span class="directive">db</span> <span class="number">$3F</span>, <span class="number">$10</span> <span class="comment">; wave RAM 15</span>
+    <span class="directive">db</span> <span class="number">$1A</span>, <span class="number">$80</span> <span class="comment">; NR30</span>
+    <span class="directive">db</span> <span class="number">$1C</span>, <span class="number">$20</span> <span class="comment">; NR32</span>
+    <span class="directive">db</span> <span class="number">$1D</span>, <span class="number">$0B</span> <span class="comment">; NR33</span>
+    <span class="directive">db</span> <span class="number">$1E</span>, <span class="number">$86</span> <span class="comment">; NR34</span>
+    <span class="directive">db</span> <span class="number">$21</span>, <span class="number">$F3</span> <span class="comment">; NR42</span>
+    <span class="directive">db</span> <span class="number">$22</span>, <span class="number">$7C</span> <span class="comment">; NR43</span>
+    <span class="directive">db</span> <span class="number">$23</span>, <span class="number">$80</span> <span class="comment">; NR44</span></code></pre>
+<p>Rows with nothing new to do have a count of 0 and cost one byte. The register writes are exactly the ones the hardware needs: <code>NR12</code> is the envelope (<code>$F0</code> is volume 15 with no fade, <code>$F2</code> fades), <code>NR13</code> and <code>NR14</code> are the low and high bits of the pitch with bit 7 of <code>NR14</code> meaning &ldquo;start the note&rdquo;. The wave channel's waveform can only be changed while the channel's DAC is off, which is why <code>NR30</code> is written <code>0</code> before wave RAM and <code>$80</code> after.</p>
+</section>
+
+<section id="player">
+<h2>The Player</h2>
+<p>The same file contains the player. <code>song_init</code> switches the sound chip on and sets the master volume (<code>NR52</code>, <code>NR50</code>, <code>NR51</code>), and rewinds the song. <code>song_update</code> is called once per frame: it counts frames, and when a row is due it replays that row's register writes through <code>ldh [c], a</code>, which stores <code>A</code> at <code>$FF00 + C</code>. When it reaches the end of a pattern it moves to the next in the order list, and at the end of the list back to the start. <code>song_stop</code> turns all four channels off.</p>
+<pre><code><span class="label">song_init</span>::
+    <span class="keyword">ld</span> a, <span class="number">$80</span>
+    <span class="keyword">ldh</span> [<span class="number">$FF26</span>], a <span class="comment">; NR52: sound on</span>
+    <span class="keyword">ld</span> a, <span class="number">$77</span>
+    <span class="keyword">ldh</span> [<span class="number">$FF24</span>], a <span class="comment">; NR50: master volume</span>
+    <span class="keyword">ld</span> a, <span class="number">$FF</span>
+    <span class="keyword">ldh</span> [<span class="number">$FF25</span>], a <span class="comment">; NR51: all channels to both outputs</span>
+    <span class="keyword">xor</span> a
+    <span class="keyword">ld</span> [song_tick], a
+    <span class="keyword">ld</span> [song_rows_left], a
+    <span class="keyword">ld</span> [song_order_pos], a
+    <span class="keyword">ret</span>
+
+<span class="label">song_stop</span>::
+    <span class="keyword">xor</span> a
+    <span class="keyword">ldh</span> [<span class="number">$FF12</span>], a <span class="comment">; NR12</span>
+    <span class="keyword">ldh</span> [<span class="number">$FF17</span>], a <span class="comment">; NR22</span>
+    <span class="keyword">ldh</span> [<span class="number">$FF1A</span>], a <span class="comment">; NR30</span>
+    <span class="keyword">ldh</span> [<span class="number">$FF21</span>], a <span class="comment">; NR42</span>
+    <span class="keyword">ret</span>
+
+<span class="label">song_update</span>::
+    <span class="keyword">ld</span> a, [song_tick]
+    <span class="keyword">or</span> a
+    <span class="keyword">jr</span> nz, .wait
+    <span class="keyword">call</span> song_play_row
+    <span class="keyword">ld</span> a, SONG_TICKS_PER_ROW
+<span class="label">.wait</span>:
+    <span class="keyword">dec</span> a
+    <span class="keyword">ld</span> [song_tick], a
+    <span class="keyword">ret</span>
+
+<span class="label">song_play_row</span>:
+    <span class="keyword">ld</span> a, [song_rows_left]
+    <span class="keyword">or</span> a
+    <span class="keyword">call</span> z, song_next_pattern
+    <span class="keyword">ld</span> a, [song_row_ptr]
+    <span class="keyword">ld</span> l, a
+    <span class="keyword">ld</span> a, [song_row_ptr + <span class="number">1</span>]
+    <span class="keyword">ld</span> h, a
+    <span class="keyword">ld</span> a, [hl+]
+    <span class="keyword">or</span> a
+    <span class="keyword">jr</span> z, .done
+    <span class="keyword">ld</span> b, a
+<span class="label">.write</span>:
+    <span class="keyword">ld</span> a, [hl+]
+    <span class="keyword">ld</span> c, a
+    <span class="keyword">ld</span> a, [hl+]
+    <span class="keyword">ldh</span> [c], a
+    <span class="keyword">dec</span> b
+    <span class="keyword">jr</span> nz, .write
+<span class="label">.done</span>:
+    <span class="keyword">ld</span> a, l
+    <span class="keyword">ld</span> [song_row_ptr], a
+    <span class="keyword">ld</span> a, h
+    <span class="keyword">ld</span> [song_row_ptr + <span class="number">1</span>], a
+    <span class="keyword">ld</span> hl, song_rows_left
+    <span class="keyword">dec</span> [hl]
+    <span class="keyword">ret</span>
+
+<span class="label">song_next_pattern</span>:
+    <span class="keyword">ld</span> a, [song_order_pos]
+    <span class="keyword">ld</span> e, a
+    <span class="keyword">ld</span> d, <span class="number">0</span>
+    <span class="keyword">ld</span> hl, song_order
+    <span class="keyword">add</span> hl, de
+    <span class="keyword">ld</span> a, [hl]
+    <span class="keyword">add</span> a, a
+    <span class="keyword">ld</span> e, a
+    <span class="keyword">ld</span> d, <span class="number">0</span>
+    <span class="keyword">ld</span> hl, song_patterns
+    <span class="keyword">add</span> hl, de
+    <span class="keyword">ld</span> a, [hl+]
+    <span class="keyword">ld</span> h, [hl]
+    <span class="keyword">ld</span> l, a
+    <span class="keyword">ld</span> a, [hl+]
+    <span class="keyword">ld</span> [song_rows_left], a
+    <span class="keyword">ld</span> a, l
+    <span class="keyword">ld</span> [song_row_ptr], a
+    <span class="keyword">ld</span> a, h
+    <span class="keyword">ld</span> [song_row_ptr + <span class="number">1</span>], a
+    <span class="keyword">ld</span> a, [song_order_pos]
+    <span class="keyword">inc</span> a
+    <span class="keyword">cp</span> SONG_ORDER_LENGTH
+    <span class="keyword">jr</span> c, .store
+    <span class="keyword">xor</span> a
+<span class="label">.store</span>:
+    <span class="keyword">ld</span> [song_order_pos], a
+    <span class="keyword">ret</span></code></pre>
+</section>
+
+<section id="program">
+<h2>The Program: music_demo.asm</h2>
+<p>The program is short because the player does the work. The one rule is that <code>song_update</code> must be called <strong>exactly once per frame</strong>, which is what <code>WaitFrame</code> guarantees. (Real games usually call it from the VBlank interrupt handler so the music stays in time however long the game takes to run.) A stops the music with <code>song_stop</code> and B restarts it with <code>song_init</code>.</p>
+<pre><code><span class="comment">; music_demo.asm - play the song exported from the Music Editor</span>
+<span class="comment">;</span>
+<span class="comment">; Export "song" from the Music Editor (Export RGBDS) and put song.asm next to this file.</span>
+<span class="comment">; It provides the player: song_init (once), song_update (once per frame) and song_stop.</span>
+<span class="comment">; Press A to stop the music and B to start it again.</span>
+
+<span class="directive">INCLUDE</span> <span class="string">"hardware.inc"</span>
+<span class="directive">INCLUDE</span> <span class="string">"song.asm"</span>
+
+<span class="directive">SECTION</span> <span class="string">"Header"</span>, ROM0[<span class="number">$100</span>]
+    <span class="keyword">nop</span>
+    <span class="keyword">jp</span> Start
+    <span class="directive">ds</span> <span class="number">$150</span> - @, <span class="number">0</span>
+
+<span class="directive">SECTION</span> <span class="string">"MusicVars"</span>, WRAM0
+<span class="label">wPlaying</span>: <span class="directive">DS</span> <span class="number">1</span>
+
+<span class="directive">SECTION</span> <span class="string">"Main"</span>, ROM0[<span class="number">$150</span>]
+<span class="label">Start</span>:
+    <span class="keyword">call</span> LcdOff              <span class="comment">; (nothing to draw: the screen stays blank)</span>
+    <span class="keyword">ld</span> a, <span class="number">%11100100</span>
+    <span class="keyword">ldh</span> [rBGP], a
+    <span class="keyword">ld</span> a, LCDCF_ON | LCDCF_BG8000 | LCDCF_BGON
+    <span class="keyword">ldh</span> [rLCDC], a
+
+    <span class="keyword">call</span> song_init           <span class="comment">; power the sound chip up and rewind the song</span>
+    <span class="keyword">ld</span> a, <span class="number">1</span>
+    <span class="keyword">ld</span> [wPlaying], a
+
+<span class="label">.loop</span>:
+    <span class="keyword">call</span> WaitFrame           <span class="comment">; the player expects exactly one call per frame</span>
+    <span class="keyword">call</span> ReadJoypad
+    <span class="keyword">ld</span> a, [wJoypad]
+    <span class="keyword">bit</span> PADB_A, a
+    <span class="keyword">jr</span> z, .notA
+    <span class="keyword">ld</span> a, [wPlaying]
+    <span class="keyword">or</span> a
+    <span class="keyword">jr</span> z, .notA
+    <span class="keyword">call</span> song_stop           <span class="comment">; silence all four channels</span>
+    <span class="keyword">xor</span> a
+    <span class="keyword">ld</span> [wPlaying], a
+<span class="label">.notA</span>:
+    <span class="keyword">ld</span> a, [wJoypad]
+    <span class="keyword">bit</span> PADB_B, a
+    <span class="keyword">jr</span> z, .update
+    <span class="keyword">ld</span> a, [wPlaying]
+    <span class="keyword">or</span> a
+    <span class="keyword">jr</span> nz, .update
+    <span class="keyword">call</span> song_init           <span class="comment">; start again from the beginning</span>
+    <span class="keyword">ld</span> a, <span class="number">1</span>
+    <span class="keyword">ld</span> [wPlaying], a
+<span class="label">.update</span>:
+    <span class="keyword">ld</span> a, [wPlaying]
+    <span class="keyword">or</span> a
+    <span class="keyword">jr</span> z, .loop
+    <span class="keyword">call</span> song_update
+    <span class="keyword">jr</span> .loop
+
+    <span class="directive">INCLUDE</span> <span class="string">"util.inc"</span></code></pre>
+</section>
+
+<section id="running">
+<h2>Assembling and Running</h2>
+<pre><code>make music/music_demo.gb       # assemble, link and fix the header
+make run-music/music_demo      # ...and open it in mGBA</code></pre>
+<p>The screen stays blank; there is only sound. The test script runs this ROM on an emulated Game Boy with sound switched on, listens to the first row and checks that the notes the editor put there (C5 on Pulse 1, C4 on Pulse 2 and C3 on the wave channel) are the loudest frequencies in the output.</p>
+<p>Things to try: change the speed in the editor to 4 and export again; draw a new waveform and give the bass a different sound; give Pulse 1 an instrument with a downward sweep for a laser effect.</p>
+</section>
+
+<section id="gbdk">
+<h2>The Same Thing in C with GBDK</h2>
+<p><em>Export C</em> writes <code>song.h</code> with the data and a player with the same three functions. Include it in one <code>.c</code> file and call the player once per frame. (As with the C on the other pages, this follows the GBDK documentation but is not run by the test script.)</p>
+<pre><code>#include &lt;gb/gb.h&gt;
+#include "song.h"
+
+void main(void) {
+    song_init();
+    while (1) {
+        wait_vbl_done();    /* one frame */
+        song_update();
+    }
+}</code></pre>
+</section>
+
+</body>
+</html>

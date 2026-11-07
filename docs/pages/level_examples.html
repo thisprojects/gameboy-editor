@@ -1,0 +1,63 @@
+title: Level Example: Drawing a Metatile Level with Collision and a Camera on a Game Boy
+heading: Level: Metatiles, Collision and a Camera
+subtitle: From the Metatile and Level Editors to a level you can walk around
+---
+<section id="introduction">
+<h2>Introduction</h2>
+<p>A level is usually bigger than one screen and built from a few repeated blocks. Storing every tile would waste ROM, so the Game Boy editors work with <strong>metatiles</strong>: blocks of 2&times;2 or 4&times;4 tiles (16&times;16 or 32&times;32 pixels). The level is then a grid with <em>one byte per metatile</em>. A 32&times;32-tile level stored as a tile map takes 1024 bytes; as a 16&times;16 grid of 2&times;2 metatiles it takes 256 bytes plus a 28-byte table of the metatiles. A metatile can also carry a <strong>collision flag</strong>, so the game knows which blocks are solid without looking at pixels.</p>
+<p>This example draws a level, lets you walk a small sprite around it that is stopped by solid blocks, and scrolls a camera to follow. It builds on <a href="/tile_examples.html">Tiles</a>, <a href="/map_examples.html">Map</a> (the background map and scrolling) and <a href="/sprite_examples.html">Sprites</a>; the <a href="/tile_examples.html#helpers">helper routines</a> are explained on the first page.</p>
+</section>
+
+<section id="exporting">
+<h2>Exporting from the Editors</h2>
+<ol class="steps">
+<li>In the <strong>Metatile Editor</strong>, import a tileset, choose the metatile size (the example uses 2&times;2) and build the metatiles. Tick <em>Solid</em> on the ones that should block the player. Save the project to use the metatiles in the Level Editor.</li>
+<li>In the <strong>Level Editor</strong>, import the metatile file and paint the level. <code>cave_level.json</code> holds the level used here, library included: load it with <em>Load project</em>.</li>
+<li>Click <strong>Export RGBDS (.asm)</strong> and name the file <code>cave</code>. (<em>Export tile map (.tilemap)</em> writes the level with every metatile already expanded to tile numbers, ready to copy to the background map.)</li>
+</ol>
+<p>The tiles in the export are the ones the metatiles use, up to the highest tile number. The cave has a metatile of flowers for a reason: the program also uses the flower tile as the player sprite, and a tile that no metatile uses would not be in the export.</p>
+</section>
+
+<section id="exported-data">
+<h2>The Exported Data: cave.asm</h2>
+<p>Besides the tiles (as in the Tiles example) there are three tables. First the sizes:</p>
+[[lines level/cave.asm 1-8]]
+<p>The <strong>metatile table</strong>: four tile numbers per metatile (<code>CAVE_METATILE_SIZE</code> squared), row by row, followed by the <strong>collision table</strong>: one byte per metatile, 1 for solid.</p>
+[[part level/cave.asm | ; 4 tile indices | cave_map::]]
+<p>And the <strong>level map</strong>, one metatile number per cell (<code>CAVE_WIDTH</code> by <code>CAVE_HEIGHT</code>). The first rows:</p>
+[[part level/cave.asm | ; metatile index per cell | ; row 3]]
+</section>
+
+<section id="program">
+<h2>The Program: level_demo.asm</h2>
+<h3>Setting up and the main loop</h3>
+<p>The example is written for 2&times;2 metatiles in a level 16 across and 16 down. That is 32&times;32 tiles, exactly the size of the hardware background map, so the whole level is drawn into it once and scrolling is just changing <code>rSCX</code> and <code>rSCY</code>. The <code>ASSERT</code> lines make the assembler stop if you export something else. (A larger level needs the map to be refilled with the part that is about to scroll into view; the principle is the same.)</p>
+[[part level/level_demo.asm | Start: | ; Expand the level map]]
+<h3>Drawing the level</h3>
+<p>Each cell of the level map is a metatile number. The program looks up its four tiles in <code>cave_metatiles</code> (number &times; 4) and writes them as a 2&times;2 block of the background map, two tiles in one row and two in the row below, 32 cells further on.</p>
+[[part level/level_demo.asm | ; Expand the level map | ; B = x, C = y: pixel position]]
+<h3>Collision</h3>
+<p>Collision works on pixel positions. <code>IsSolidAt</code> divides a position by 16 (the size of a metatile in pixels) to find the cell, looks up the metatile there in <code>cave_map</code>, and reads its flag in <code>cave_collision</code>. Because the level is 16 cells wide, the cell number is just the high nibble of Y followed by the high nibble of X. <code>Blocked</code> asks about the four corners of the 8&times;8 player.</p>
+[[part level/level_demo.asm | ; B = x, C = y: pixel position | ; Try to move]]
+<h3>Moving the player</h3>
+<p>For each direction pressed, the program works out where the player would be one pixel further on and only moves there if that spot is not <code>Blocked</code>. Horizontal and vertical moves are tried separately, so the player slides along walls instead of sticking to them.</p>
+[[part level/level_demo.asm | ; Try to move | ; Centre the camera]]
+<h3>The camera</h3>
+<p>The camera is the player's position minus half a screen, kept inside the 256&times;256 map so that it never shows the wrap-around. In VBlank the scroll registers are set and the player's sprite is placed at its position minus the camera.</p>
+[[part level/level_demo.asm | ; Centre the camera | INCLUDE "util.inc"]]
+</section>
+
+<section id="source">
+<h2>Complete Source</h2>
+[[file level/level_demo.asm]]
+</section>
+
+<section id="running">
+<h2>Assembling and Running</h2>
+[[text]]
+make level/level_demo.gb       # assemble, link and fix the header
+make run-level/level_demo      # ...and open it in mGBA
+[[/text]]
+<p>Use the direction keys to walk the flower around. It is stopped by the rock, brick and ground, and walks through water, trees and the flowers (which are not solid). Things to try: mark the water as <em>Solid</em> in the Metatile Editor, re-export, and watch it become a lake; or add gravity by moving the player down every frame unless the spot below is <code>Blocked</code>.</p>
+<p>The test script plays this program with random key presses for over a thousand frames and compares every position with an independent model of the same collision rules.</p>
+</section>

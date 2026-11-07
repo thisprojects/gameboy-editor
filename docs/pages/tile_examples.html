@@ -1,0 +1,93 @@
+title: Tile Example: Displaying Exported Tiles on a Game Boy
+heading: Tiles: Displaying Exported Tiles
+subtitle: From the Tile Editor to pixels on a Game Boy screen
+---
+<section id="introduction">
+<h2>Introduction</h2>
+<p>These pages are worked examples, one per editor. Each one takes the file the editor exports and shows it on a real (emulated) Game Boy, with a small assembly program you can read, change and reuse. If you have not written Game Boy assembly before, read <a href="/gameboy_book.html">An Introduction to Game Boy Assembly Language</a> first.</p>
+<p>Every program in these examples is assembled with RGBDS and run on an emulated Game Boy by <code>examples/verify_examples.py</code>, which compares the emulated screen (or sound) with what the editor says it should be. The programs live in the <code>examples/</code> folder of the editor project, next to the editor files they use: you can load <code>forest_tiles.json</code> into the Tile Editor with <em>Load project</em> and see exactly the tiles used below.</p>
+<p>The Game Boy has no screen memory to draw pixels into. Everything it shows is made of <strong>8&times;8 pixel tiles</strong>. Each pixel has one of 4 shades, so a tile takes 2 bits per pixel: <strong>16 bytes</strong>. The tiles live in video memory (VRAM) from <code>$8000</code>; there is room for 384. The background is then a grid of <em>tile numbers</em> (the <em>tile map</em>), and the hardware draws the tile each number points to. This page shows the first half of that story: getting tiles into VRAM and onto the screen.</p>
+</section>
+
+<section id="exporting">
+<h2>Exporting from the Editor</h2>
+<ol class="steps">
+<li>In the <strong>Tile Editor</strong>, draw your tiles. The canvas is a grid of tiles numbered left to right, top to bottom (turn on <em>Show tile numbers</em>); the example uses a 4&times;2 grid, so 8 tiles.</li>
+<li>Click <strong>Export RGBDS (.asm)</strong> and name the file <code>forest</code>. You get <code>forest.asm</code>. (<em>Export C</em> gives a GBDK header, <em>Export .2bpp</em> the raw tile bytes.)</li>
+<li>Put <code>forest.asm</code> next to your program and <code>INCLUDE</code> it, as <code>tile_viewer.asm</code> below does.</li>
+</ol>
+<p>Trailing blank tiles are left out of the export, so the data is only as big as the tiles you actually drew.</p>
+</section>
+
+<section id="exported-data">
+<h2>The Exported Data: forest.asm</h2>
+[[file tiles/forest.asm]]
+<p>The file defines <code>FOREST_TILE_COUNT</code> (how many tiles there are), the label <code>forest_tiles</code> where the data starts and <code>forest_tiles_end</code> just after it, so <code>forest_tiles_end - forest_tiles</code> is the size in bytes. It is a <code>SECTION</code> of its own: the linker decides where in the ROM it goes.</p>
+<h3>How a tile is stored</h3>
+<p>Each row of 8 pixels takes two bytes. The first byte holds the <em>low bit</em> of every pixel's shade, the second the <em>high bit</em>, with the leftmost pixel in bit 7. Take the second row of the brick tile (tile 1), drawn as <code>#oooo#oo</code> where <code>#</code> is shade 3 and <code>o</code> shade 2:</p>
+[[text]]
+pixel          #  o  o  o  o  #  o  o
+shade          3  2  2  2  2  3  2  2
+low bit        1  0  0  0  0  1  0  0   = $84
+high bit       1  1  1  1  1  1  1  1   = $FF
+[[/text]]
+<p>That is the <code>$84, $FF</code> pair in the data. The Game Boy has no colour in each pixel, just a shade number from 0 to 3; what shade you actually <em>see</em> comes from a palette register (below).</p>
+</section>
+
+<section id="program">
+<h2>The Program: tile_viewer.asm</h2>
+<h3>Copying the tiles to VRAM</h3>
+<p>VRAM can only be written freely while the screen hardware is not reading it, so the program switches the LCD off first (<code>LcdOff</code> waits for the start of VBlank, the gap between two frames, because switching off at any other moment can damage a real screen). Then it copies the tile data to <code>$8000</code> (<code>VRAM_TILES</code>): tile 0 will be at <code>$8000</code>, tile 1 at <code>$8010</code>, and so on.</p>
+[[part tiles/tile_viewer.asm | Start: | ; Clear the background map]]
+<h3>Filling the tile map</h3>
+<p>The background map is a 32&times;32 grid of tile numbers at <code>$9800</code> (<code>VRAM_MAP</code>). The program first fills it with tile 0, a blank tile, then writes tile numbers 0 to 7 in one row.</p>
+[[part tiles/tile_viewer.asm | ; Clear the background map | ld a, %11100100]]
+<h3>Palette and switching the screen on</h3>
+<p><code>rBGP</code> maps the four shades in the tile data to the four shades the screen can show: two bits for each, shade 0 in the lowest bits. <code>%11100100</code> means &ldquo;shade 0 shows as 0, 1 as 1, 2 as 2, 3 as 3&rdquo;, so the tiles look as drawn. Try <code>%00011011</code> to invert them. Finally <code>rLCDC</code> turns the LCD on with the background enabled and the tile data at <code>$8000</code>; without <code>LCDCF_BG8000</code> the hardware would look for background tiles at <code>$8800</code> instead.</p>
+[[part tiles/tile_viewer.asm | ld a, %11100100 | INCLUDE "util.inc"]]
+</section>
+
+<section id="source">
+<h2>Complete Source</h2>
+[[file tiles/tile_viewer.asm]]
+</section>
+
+<section id="helpers">
+<h2>The Helper Routines: util.inc</h2>
+<p>Every example <code>INCLUDE</code>s two small files from <code>examples/common/</code>. <code>hardware.inc</code> gives names to the hardware registers (it extends the file of the same name from the book). <code>util.inc</code> has the routines the examples share. They are used on the other pages too.</p>
+[[file common/util.inc]]
+<p>Two details worth knowing. <strong>The interrupt vectors:</strong> when an interrupt happens the CPU jumps to <code>$40</code>, <code>$48</code>, <code>$50</code>, <code>$58</code> or <code>$60</code>. The examples do not use interrupts, but the linker may put data in the first bytes of the ROM, so the file reserves those addresses with a <code>reti</code>. <strong>One frame per loop:</strong> <code>WaitFrame</code> waits for the screen to leave VBlank <em>and</em> come back, so a loop that calls it once runs exactly once per frame, 60 times a second.</p>
+</section>
+
+<section id="running">
+<h2>Assembling and Running</h2>
+<p>You need <a href="https://rgbds.gbdev.io/" target="_blank">RGBDS</a> (0.5 or later; <code>brew install rgbds</code> on a Mac) and an emulator such as <a href="https://mgba.io/" target="_blank">mGBA</a>. In the <code>examples</code> folder:</p>
+[[text]]
+make tiles/tile_viewer.gb       # assemble, link and fix the header
+make run-tiles/tile_viewer      # ...and open it in mGBA
+[[/text]]
+<p>Or by hand, which is all <code>make</code> does:</p>
+[[text]]
+rgbasm -I common/ -I tiles/ -o tile_viewer.o tiles/tile_viewer.asm
+rgblink -n tile_viewer.sym -o tile_viewer.gb tile_viewer.o
+rgbfix -v -p 0xFF -t TILEVIEWER tile_viewer.gb
+[[/text]]
+<p><code>rgbfix</code> fills in the cartridge header (the Nintendo logo and checksums the console checks) which the program leaves as zeros. To use your own tiles, export them as <code>forest.asm</code> (or change the <code>INCLUDE</code> and the label names) and run the same commands.</p>
+</section>
+
+<section id="gbdk">
+<h2>The Same Thing in C with GBDK</h2>
+<p>If you prefer C, <em>Export C</em> writes <code>forest.h</code> with the same data and <code>FOREST_TILE_COUNT</code>. With <a href="https://gbdk-2020.github.io/gbdk-2020/" target="_blank">GBDK-2020</a> it is loaded with <code>set_bkg_data</code>. (The programs in these examples are the RGBDS ones; the C below follows the GBDK documentation but is not run by the test script.)</p>
+[[text]]
+#include <gb/gb.h>
+#include "forest.h"
+
+void main(void) {
+    set_bkg_data(0, FOREST_TILE_COUNT, forest_tiles);   /* tiles to VRAM from tile 0 */
+    unsigned char row[FOREST_TILE_COUNT];
+    for (unsigned char i = 0; i < FOREST_TILE_COUNT; i++) row[i] = i;
+    set_bkg_tiles(6, 8, FOREST_TILE_COUNT, 1, row);      /* one row of the background map */
+    SHOW_BKG;
+}
+[[/text]]
+</section>
