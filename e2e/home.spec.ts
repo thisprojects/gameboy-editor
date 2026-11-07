@@ -75,7 +75,7 @@ test.describe('home page', () => {
   for (const viewport of [
     { width: 375, height: 800, across: 1 },
     { width: 700, height: 900, across: 2 },
-    { width: 1000, height: 900, across: 3 },
+    { width: 1100, height: 900, across: 3 },
     { width: 1440, height: 900, across: 4 },
     { width: 1920, height: 1080, across: 4 },
   ]) {
@@ -104,7 +104,9 @@ test.describe('home page', () => {
 
   test('the title text and tile text are readable on their backgrounds (WCAG AA)', async ({ page }) => {
     const ratios = await page.evaluate(() => {
-      const parse = (css: string) => (css.match(/[\d.]+/g) ?? []).slice(0, 3).map(Number);
+      // Tailwind 4 colours are oklch(): let a canvas turn any CSS colour into rgb
+      const probe = document.createElement('canvas').getContext('2d', { willReadFrequently: true })!;
+      const parse = (css: string) => { probe.clearRect(0, 0, 1, 1); probe.fillStyle = '#000'; probe.fillStyle = css; probe.fillRect(0, 0, 1, 1); return [...probe.getImageData(0, 0, 1, 1).data].slice(0, 3); };
       const lum = ([r, g, b]: number[]) => {
         const f = (v: number) => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); };
         return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);

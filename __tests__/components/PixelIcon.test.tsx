@@ -46,6 +46,9 @@ describe('PixelIcon', () => {
 
   it('ignores characters it does not know, and copes with empty art', () => {
     expect(rects(render(<PixelIcon art={['x?#']} />).container)).toEqual([{ x: 2, y: 0, width: 1, fill: dark }]);
+  });
+
+  it('copes with empty art', () => {
     const { getByTestId } = render(<PixelIcon art={[]} />);
     expect(getByTestId('pixel-icon')).toHaveAttribute('viewBox', '0 0 0 0');
   });

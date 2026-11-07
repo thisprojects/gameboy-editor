@@ -39,6 +39,8 @@ Game Boy (DMG) asset editor suite, a sibling of the ZX Spectrum editor at `/User
   - Found and fixed by this phase: an example's tile data was not exported because no metatile used it (the level now has a flower metatile, documented); a level border hole; stale ZX "Z80" wording in the export dialog and its tests (some "should not show" assertions had been passing vacuously). Not verified: the GBDK C snippets on the pages (no GBDK installed).
 - All planned phases are done. Possible next steps: GBC colour support, hUGEDriver export, PNG import for the map editor, Window-layer overlay.
 
+- Home page (`app/page.tsx`): hero (dot grid, glows, feature chips, gradient VT323 title) and seven decorative tiles in a centred wrapping flex list (1/2/3/4 across, short last row centred). Per-editor data (description, accent colour, 12x12 pixel-art icon) lives in `constants/editorCards.ts`; `components/PixelIcon.tsx` draws the art as SVG in the DMG greens. Tiles keep `aria-label` = the editor name (tests and e2e match it exactly); hover/focus use the tile's `--accent`, movement only under `motion-safe:`. Tests: `__tests__/app/pages.test.tsx`, `__tests__/components/PixelIcon.test.tsx`, `e2e/home.spec.ts`.
+
 Everything below is the original plan.
 
 ---
