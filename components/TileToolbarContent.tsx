@@ -1,5 +1,6 @@
 'use client';
 
+import { toolTitle } from '@/constants/toolHints';
 import { Tool } from '@/types';
 import { BsPencilFill, BsEraserFill, BsPaintBucket, BsArrowsMove } from 'react-icons/bs';
 import { TbLine } from 'react-icons/tb';
@@ -74,7 +75,7 @@ export function TileToolbarContent(props: TileToolbarContentProps) {
           {TOOLS.map(({ tool, label, icon }) => (
             <button
               key={tool}
-              title={label}
+              title={toolTitle(label)}
               aria-label={label}
               aria-pressed={currentTool === tool}
               onClick={() => onSelectTool(tool)}

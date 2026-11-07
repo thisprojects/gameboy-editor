@@ -1,5 +1,6 @@
 'use client';
 
+import { toolTitle } from '@/constants/toolHints';
 import { Tile } from '@/types/map';
 import { Metatile, MetatileTool } from '@/types/metatile';
 import { BsBrushFill, BsEraserFill, BsPaintBucket, BsEyedropper } from 'react-icons/bs';
@@ -66,7 +67,7 @@ export function MetatileToolbarContent(props: MetatileToolbarContentProps) {
           {TOOLS.map(({ tool, label, icon }) => (
             <button
               key={tool}
-              title={label}
+              title={toolTitle(label)}
               aria-label={label}
               aria-pressed={currentTool === tool}
               onClick={() => onSelectTool(tool)}

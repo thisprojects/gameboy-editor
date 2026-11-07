@@ -1,5 +1,6 @@
 'use client';
 
+import { toolTitle } from '@/constants/toolHints';
 import { MapTool, Tile } from '@/types/map';
 import { Metatile } from '@/types/metatile';
 import { BsBrushFill, BsEraserFill, BsPaintBucket, BsArrowsMove, BsBoundingBoxCircles, BsEyedropper } from 'react-icons/bs';
@@ -79,7 +80,7 @@ export function LevelToolbarContent(props: LevelToolbarContentProps) {
           {TOOLS.map(({ tool, label, icon }) => (
             <button
               key={tool}
-              title={label}
+              title={toolTitle(label)}
               aria-label={label}
               aria-pressed={currentTool === tool}
               onClick={() => onSelectTool(tool)}

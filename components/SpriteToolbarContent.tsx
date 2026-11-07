@@ -1,5 +1,6 @@
 'use client';
 
+import { toolTitle } from '@/constants/toolHints';
 import { Tool } from '@/types';
 import { SpriteFrame } from '@/types/sprite';
 import { BsPencilFill, BsEraserFill, BsPaintBucket, BsArrowsMove, BsPlayFill, BsStopFill } from 'react-icons/bs';
@@ -96,7 +97,7 @@ export function SpriteToolbarContent(props: SpriteToolbarContentProps) {
           {TOOLS.map(({ tool, label, icon }) => (
             <button
               key={tool}
-              title={label}
+              title={toolTitle(label)}
               aria-label={label}
               aria-pressed={currentTool === tool}
               onClick={() => onSelectTool(tool)}

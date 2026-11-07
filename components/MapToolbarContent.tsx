@@ -1,5 +1,6 @@
 'use client';
 
+import { toolTitle } from '@/constants/toolHints';
 import { MapTool, Tile } from '@/types/map';
 import { BsBrushFill, BsEraserFill, BsPaintBucket, BsArrowsMove, BsBoundingBoxCircles, BsEyedropper } from 'react-icons/bs';
 import { PALETTE_PRESETS, PalettePreset, SCREEN_TILES_X, SCREEN_TILES_Y } from '@/constants';
@@ -72,7 +73,7 @@ export function MapToolbarContent(props: MapToolbarContentProps) {
           {TOOLS.map(({ tool, label, icon }) => (
             <button
               key={tool}
-              title={label}
+              title={toolTitle(label)}
               aria-label={label}
               aria-pressed={currentTool === tool}
               onClick={() => onSelectTool(tool)}
