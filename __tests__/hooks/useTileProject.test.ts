@@ -20,12 +20,12 @@ function changeEvent(file: File): React.ChangeEvent<HTMLInputElement> {
 
 /** Make FileReader resolve synchronously with the given result. */
 function mockReader(result: string | ArrayBuffer) {
-  jest.spyOn(global, 'FileReader').mockImplementation(function (this: FileReader) {
+  jest.spyOn(global as unknown as Record<string, jest.Mock>, 'FileReader').mockImplementation(function (this: FileReader) {
     const self = this as unknown as { onload: (e: unknown) => void };
     (this as unknown as Record<string, unknown>).readAsText = () => self.onload({ target: { result } });
     (this as unknown as Record<string, unknown>).readAsArrayBuffer = () => self.onload({ target: { result } });
     return this;
-  } as unknown as typeof FileReader);
+  });
 }
 
 describe('useTileProject', () => {

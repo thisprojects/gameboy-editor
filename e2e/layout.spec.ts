@@ -100,4 +100,67 @@ test.describe('big canvases stay reachable', () => {
     await area.evaluate((a) => a.scrollTo(0, 0));
     await page.getByTestId('map-canvas').click({ position: { x: 4, y: 4 }, trial: true }); // ... and so can the top
   });
+
+  for (const route of EDITORS) {
+    test(`${route}: Load/Save/Export stay pinned in view, and the Export menu opens inside the toolbar`, async ({ page }) => {
+      await page.setViewportSize({ width: 1024, height: 600 });
+      await page.goto(route);
+      const bar = page.getByTestId('file-actions');
+      const viewport = page.viewportSize()!;
+      const inView = async () => {
+        const b = (await bar.boundingBox())!;
+        return b.y >= 0 && b.y + b.height <= viewport.height + 0.5;
+      };
+      expect(await inView(), 'visible without scrolling').toBe(true);
+      // still pinned after the toolbar is scrolled to its end
+      await page.locator('div.fixed.left-0 div.overflow-y-auto').first().evaluate((el) => (el.scrollTop = el.scrollHeight));
+      expect(await inView()).toBe(true);
+
+      await bar.locator('summary').click();
+      const menu = bar.locator('details > div');
+      await expect(menu).toBeVisible();
+      const m = (await menu.boundingBox())!;
+      expect(m.x).toBeGreaterThanOrEqual(0);
+      expect(m.x + m.width).toBeLessThanOrEqual(220);
+      expect(m.y).toBeGreaterThanOrEqual(40); // below the navbar
+      // Escape and an outside click both close it
+      await page.keyboard.press('Escape');
+      await expect(menu).toBeHidden();
+      await bar.locator('summary').click();
+      await page.mouse.click(700, 300);
+      await expect(menu).toBeHidden();
+    });
+  }
+
+  for (const route of EDITORS.filter((r) => r !== '/music_editor')) {
+    test(`${route}: tool buttons form an even grid (no lone button on a row)`, async ({ page }) => {
+      await page.goto(route);
+      const tops = await page.locator('button[aria-pressed]').evaluateAll((els) => {
+        const rows = new Map<number, number>();
+        for (const e of els.slice(0, 8)) {
+          if (!e.closest('.grid')) continue;
+          const y = Math.round(e.getBoundingClientRect().top);
+          rows.set(y, (rows.get(y) ?? 0) + 1);
+        }
+        return [...rows.values()];
+      });
+      expect(tops.length).toBeGreaterThan(0);
+      expect(Math.min(...tops), `buttons per row: ${tops}`).toBeGreaterThan(1);
+    });
+  }
+
+  for (const route of EDITORS) {
+    test(`${route}: nothing sticks out of its toolbar card`, async ({ page }) => {
+      await page.goto(route);
+      const out = await page.locator('details[open]').evaluateAll((cards) =>
+        cards.flatMap((card) => {
+          const right = card.getBoundingClientRect().right;
+          return [...card.querySelectorAll('*')]
+            .filter((e) => e.getBoundingClientRect().width > 0 && e.getBoundingClientRect().right > right + 0.5 && !e.closest('[data-testid="file-actions"]'))
+            .map((e) => `${e.tagName}${e.getAttribute('data-testid') ?? e.getAttribute('aria-label') ?? ''}`);
+        })
+      );
+      expect(out).toEqual([]);
+    });
+  }
 });

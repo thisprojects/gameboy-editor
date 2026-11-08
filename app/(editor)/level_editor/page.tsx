@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useLevelDrawing } from '@/hooks/useLevelDrawing';
+import { useLevelDrawing, LevelTool } from '@/hooks/useLevelDrawing';
 import { useLevelProject } from '@/hooks/useLevelProject';
 import { useUndoRedoShortcuts } from '@/hooks/useUndoRedoShortcuts';
 import { EditorToolbar } from '@/components/EditorToolbar';
@@ -13,14 +13,13 @@ import { PALETTE_PRESETS, PalettePreset, SCREEN_TILES_X, SCREEN_TILES_Y, TILE_SI
 import { BGP_PRESETS } from '@/constants/map';
 import { DEFAULT_LEVEL_ZOOM } from '@/constants/level';
 import { applyPaletteRegister } from '@/constants/sprite';
-import { MapTool } from '@/types/map';
 import { renderMetatileCanvas } from '@/utils/render';
 
-const STATUS: Record<MapTool, string> = {
+const STATUS: Record<LevelTool, string> = {
   stamp: 'Click and drag to paint the selected metatile',
-  rect: 'Drag to fill a rectangle with the selected metatile',
   fill: 'Click to flood-fill matching metatiles',
   pick: 'Click a cell to pick its metatile',
+  select: 'Click a cell or drag an area, then Apply metatile to selection, or Clear selection (Delete) for the empty background',
   rubber: 'Click and drag to erase (metatile 0)',
   pan: 'Click and drag to pan; scroll also pans, pinch or Ctrl/Cmd+scroll zooms',
 };
@@ -72,7 +71,7 @@ export default function LevelEditorPage() {
     [drawing.metatiles, drawing.tiles, displayPreset]
   );
 
-  const { map, metatiles, mw, mh, showCollision, showViewport, scx, scy, rectStart, rectEnd, currentTool } = drawing;
+  const { map, metatiles, mw, mh, showCollision, showViewport, scx, scy, selStart, selEnd, currentTool } = drawing;
   const cellSize = mw * TILE_SIZE * zoom;
   const cellHeight = mh * TILE_SIZE * zoom;
 
@@ -96,18 +95,35 @@ export default function LevelEditorPage() {
         ctx.lineWidth = 2;
         ctx.strokeRect(scx * tilePx, scy * tilePx, SCREEN_TILES_X * tilePx, SCREEN_TILES_Y * tilePx);
       }
-      if (currentTool === 'rect' && rectStart && rectEnd) {
-        ctx.fillStyle = 'rgba(59, 130, 246, 0.35)';
-        ctx.fillRect(
-          Math.min(rectStart.x, rectEnd.x) * cellSize,
-          Math.min(rectStart.y, rectEnd.y) * cellHeight,
-          (Math.abs(rectEnd.x - rectStart.x) + 1) * cellSize,
-          (Math.abs(rectEnd.y - rectStart.y) + 1) * cellHeight
-        );
+      if (currentTool === 'select' && selStart && selEnd) {
+        const x = Math.min(selStart.x, selEnd.x) * cellSize;
+        const y = Math.min(selStart.y, selEnd.y) * cellHeight;
+        const w = (Math.abs(selEnd.x - selStart.x) + 1) * cellSize;
+        const h = (Math.abs(selEnd.y - selStart.y) + 1) * cellHeight;
+        ctx.fillStyle = 'rgba(250, 204, 21, 0.25)';
+        ctx.fillRect(x, y, w, h);
+        ctx.strokeStyle = '#facc15';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, w, h);
       }
     },
-    [showViewport, scx, scy, zoom, currentTool, rectStart, rectEnd, cellSize, cellHeight]
+    [showViewport, scx, scy, zoom, currentTool, selStart, selEnd, cellSize, cellHeight]
   );
+
+  const { clearSelection } = drawing;
+  useEffect(() => {
+    if (currentTool !== 'select' || !selStart) return;
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        clearSelection();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [currentTool, selStart, clearSelection]);
 
   const onWheelZoom = useCallback((dir: 1 | -1) => setZoom((z) => Math.max(1, Math.min(6, z + dir))), []);
 
@@ -172,6 +188,9 @@ export default function LevelEditorPage() {
           onExportTilemap={() => setModalAction('exportMap')}
           onExport2bpp={() => setModalAction('export2bpp')}
           onClear={drawing.clearMap}
+          hasSelection={drawing.selStart !== null}
+          onClearSelection={drawing.clearSelection}
+          onApplySelection={drawing.applySelected}
         />
       </EditorToolbar>
 

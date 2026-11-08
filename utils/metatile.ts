@@ -40,6 +40,28 @@ export function defaultLibrary(): MetaDims & { tiles: Tile[]; metatiles: Metatil
   };
 }
 
+const isBlankTile = (t: Tile | undefined) => !!t && t.every((row) => row.every((p) => p === 0));
+
+/**
+ * Make metatile 0 an empty, non-solid background cell. A freshly imported library often starts with a
+ * real metatile at index 0, which would fill the whole (all-zero) level. If metatile 0 is not already
+ * empty, a blank metatile is inserted at index 0 (using an existing blank tile, or appending one).
+ */
+export function withEmptyBackground<L extends { tiles: Tile[]; metatiles: Metatile[]; mw: number; mh: number }>(lib: L): L {
+  const blank = (i: number) => isBlankTile(lib.tiles[i]);
+  const first = lib.metatiles[0];
+  if (first && !first.solid && first.tiles.every((row) => row.every(blank))) return lib;
+  if (lib.metatiles.length >= MAX_METATILES) return lib;
+  let tiles = lib.tiles;
+  let blankIndex = tiles.findIndex(isBlankTile);
+  if (blankIndex < 0) {
+    if (tiles.length >= 384) return lib;
+    tiles = [...tiles, createBlankTile()];
+    blankIndex = tiles.length - 1;
+  }
+  return { ...lib, tiles, metatiles: [createMetatile(lib.mw, lib.mh, blankIndex), ...lib.metatiles] };
+}
+
 export const resizeMetatile = (m: Metatile, mw: number, mh: number): Metatile => ({
   ...m,
   tiles: resizeGrid(m.tiles, mw, mh, 0),

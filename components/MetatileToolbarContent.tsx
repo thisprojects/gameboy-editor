@@ -1,6 +1,9 @@
 'use client';
 
-import { toolTitle } from '@/constants/toolHints';
+import { ToolbarSection } from './ToolbarSection';
+import { ToolGrid } from './ToolGrid';
+import { FileActions } from './FileActions';
+
 import { Tile } from '@/types/map';
 import { Metatile, MetatileTool } from '@/types/metatile';
 import { BsBrushFill, BsEraserFill, BsPaintBucket, BsEyedropper } from 'react-icons/bs';
@@ -63,47 +66,26 @@ export function MetatileToolbarContent(props: MetatileToolbarContentProps) {
   const { currentTool, onSelectTool, tiles, selectedTile, onSelectTile, metatiles, selectedMetatile, onSelectMetatile, mw, mh, preset } = props;
 
   return (
-    <div className="space-y-4 text-sm">
-      <div>
-        <div className="text-xs text-gray-400 mb-1">Tools</div>
-        <div className="flex gap-1">
-          {TOOLS.map(({ tool, label, icon }) => (
-            <button
-              key={tool}
-              title={toolTitle(label)}
-              aria-label={label}
-              aria-pressed={currentTool === tool}
-              onClick={() => onSelectTool(tool)}
-              className={`p-2 rounded ${currentTool === tool ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-            >
-              {icon}
-            </button>
-          ))}
-        </div>
-      </div>
+    <div className="flex flex-1 flex-col gap-3 text-sm">
+      <ToolbarSection title="Tools">
+        <ToolGrid tools={TOOLS} current={currentTool} onSelect={onSelectTool} />
+      </ToolbarSection>
 
-      <div>
-        <div className="text-xs text-gray-400 mb-1">Tileset — tile {selectedTile} of {tiles.length}</div>
+      <ToolbarSection title={<>Tileset — tile {selectedTile} of {tiles.length}</>}>
         <TilePalette tiles={tiles} selected={selectedTile} onSelect={onSelectTile} preset={preset} />
         <button className={`${btn} mt-2`} onClick={props.onImportTileset}>Import tileset (.json / .2bpp)</button>
-      </div>
+      </ToolbarSection>
 
-      <div>
-        <div className="text-xs text-gray-400 mb-1">
-          Metatile size (tiles, 1–{MAX_METATILE_EDGE}) — {mw * 8}×{mh * 8} px
-        </div>
+      <ToolbarSection title={<>Metatile size (tiles, 1–{MAX_METATILE_EDGE}) — {mw * 8}×{mh * 8} px</>}>
         <div className="flex items-center gap-2">
           <NumberField min={1} max={MAX_METATILE_EDGE} value={mw} aria-label="Metatile width in tiles" onCommit={(n) => props.onSizeChange(n, mh)} className="w-16 bg-gray-700 rounded px-2 py-1" />
           <span>×</span>
           <NumberField min={1} max={MAX_METATILE_EDGE} value={mh} aria-label="Metatile height in tiles" onCommit={(n) => props.onSizeChange(mw, n)} className="w-16 bg-gray-700 rounded px-2 py-1" />
         </div>
         <p className="text-xs text-gray-500 mt-1">Any width × height, e.g. 1×4 for a long floor. Every metatile in the library shares it.</p>
-      </div>
+      </ToolbarSection>
 
-      <div>
-        <div className="text-xs text-gray-400 mb-1">
-          Metatiles — {selectedMetatile} of {metatiles.length} (max {MAX_METATILES})
-        </div>
+      <ToolbarSection title={<>Metatiles — {selectedMetatile} of {metatiles.length} (max {MAX_METATILES})</>}>
         <MetatilePalette metatiles={metatiles} tiles={tiles} selected={selectedMetatile} onSelect={onSelectMetatile} preset={preset} />
         <div className="flex gap-1 mt-2">
           <button className={small} data-tip="Add a new empty metatile to the library" onClick={props.onAddMetatile}>Add</button>
@@ -115,9 +97,9 @@ export function MetatileToolbarContent(props: MetatileToolbarContentProps) {
           <input type="checkbox" checked={props.solid} onChange={props.onToggleSolid} />
           Solid (collision)
         </label>
-      </div>
+      </ToolbarSection>
 
-      <div>
+      <ToolbarSection title="Display">
         <label className="block text-xs text-gray-400 mb-1" htmlFor="tint">Screen tint</label>
         <select
           id="tint"
@@ -134,17 +116,19 @@ export function MetatileToolbarContent(props: MetatileToolbarContentProps) {
         </label>
         <label className="block text-xs text-gray-400 mt-2" htmlFor="zoom">Zoom ({props.zoom}x)</label>
         <input id="zoom" type="range" min={2} max={16} value={props.zoom} onChange={(e) => props.onZoomChange(Number(e.target.value))} className="w-full" />
-      </div>
+      </ToolbarSection>
 
       <UndoRedoButtons onUndo={props.onUndo} onRedo={props.onRedo} canUndo={props.canUndo} canRedo={props.canRedo} historyIndex={props.historyIndex} />
 
-      <div className="space-y-1">
-        <button className={btn} onClick={props.onLoad}>Load project</button>
-        <button className={btn} onClick={props.onSave}>Save project</button>
-        <button className={btn} onClick={props.onExportASM}>Export RGBDS (.asm)</button>
-        <button className={btn} onClick={props.onExportC}>Export C (.h)</button>
-        <button className={btn} onClick={props.onExport2bpp}>Export tiles (.2bpp)</button>
-      </div>
+      <FileActions
+        onLoad={props.onLoad}
+        onSave={props.onSave}
+        exports={[
+          { label: 'Export RGBDS (.asm)', onClick: props.onExportASM },
+          { label: 'Export C (.h)', onClick: props.onExportC },
+          { label: 'Export tiles (.2bpp)', onClick: props.onExport2bpp },
+        ]}
+      />
     </div>
   );
 }

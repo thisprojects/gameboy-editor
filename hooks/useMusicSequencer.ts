@@ -472,4 +472,3 @@ export function useMusicSequencer() {
   };
 }
 
-export type MusicSequencer = ReturnType<typeof useMusicSequencer>;

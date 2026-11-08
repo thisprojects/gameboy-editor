@@ -1,4 +1,4 @@
-import { TILE_SIZE, BYTES_PER_TILE } from '@/constants';
+import { TILE_SIZE } from '@/constants';
 import { MAP_SIZE, MAX_MAP_TILES, ExportArea } from '@/constants/map';
 import { Tile } from '@/types/map';
 import { createEmptyPixels } from '@/utils/drawing';
@@ -84,4 +84,3 @@ export function cropMap(map: number[][], area: ExportArea, scx = 0, scy = 0, scr
 
 export const mapBytes = (map: number[][]): Uint8Array => Uint8Array.from(map.flat());
 
-export const TILE_BYTES = BYTES_PER_TILE;

@@ -41,6 +41,10 @@ Game Boy (DMG) asset editor suite, Client-only Next.js app; no backend.
 
 - Home page (`app/page.tsx`): hero (dot grid, glows, feature chips, gradient VT323 title) and seven decorative tiles in a centred wrapping flex list (1/2/3/4 across, short last row centred). Per-editor data (description, accent colour, 12x12 pixel-art icon) lives in `constants/editorCards.ts`; `components/PixelIcon.tsx` draws the art as SVG in the DMG greens. Tiles keep `aria-label` = the editor name (tests and e2e match it exactly); hover/focus use the tile's `--accent`, movement only under `motion-safe:`. Tests: `__tests__/app/pages.test.tsx`, `__tests__/components/PixelIcon.test.tsx`, `e2e/home.spec.ts`.
 
+- Toolbars (shared parts): `components/ToolbarSection.tsx` (collapsible card; `defaultOpen`, `openWhen`), `ToolGrid.tsx` (even tool grid, no orphan row), `FileActions.tsx` (sticky bottom bar: Load/Save/Import grid, **Export** pop-up menu opening upward, red Clear; `data-testid="file-actions"`), `TracingImagePicker.tsx`. Every `*ToolbarContent` uses them. In e2e use `clickToolbarExport(page, 'Export ...')` from `e2e/helpers.ts` (it opens the menu); `exportFile` does. Moving the mouse with `hover()` can scroll (a scroll hides the tooltip), so tooltip tests move the mouse explicitly.
+- Level editor: tools stamp/fill/pick/select/rubber/pan (no rectangle). **Select area** = click a cell or drag an area, then **Apply metatile to selection** / **Clear selection** (Delete key); metatile 0 is the empty background and `withEmptyBackground` (`utils/metatile.ts`) inserts a blank metatile 0 when an imported library's first one is not empty.
+- Type-checking: `jest-dom.d.ts` brings the jest-dom matcher types into `tsc`; `npx tsc --noEmit` is clean and should stay so.
+
 ## Hardware summary
 - Tile = 8x8 px, 2bpp, 16 bytes (per row: low bitplane, high bitplane; leftmost pixel = bit 7). 384 tiles in VRAM.
 - LCD 160x144 (20x18 tiles) viewing a 32x32-tile BG map via SCX/SCY; 40 OAM sprites (8x8 or 8x16, shade 0 transparent, flip/priority/OBP0-1).

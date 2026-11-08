@@ -7,7 +7,7 @@ import { TILE_SIZE, PalettePreset } from '@/constants';
 import { getLinePoints } from '@/utils/drawing';
 
 /** The work area is the window minus the 40px navbar (h-screen would run 40px off the bottom). */
-export const WORK_AREA_HEIGHT = 'h-[calc(100vh-40px)]';
+import { WORK_AREA_HEIGHT } from './CellGridCanvas';
 
 interface TileCanvasProps {
   pixels: number[][];

@@ -1,7 +1,7 @@
 import { ObjSize } from '@/constants/sprite';
 import { encodeTile, isTileEmpty } from '@/utils/encode';
 
-export interface OamEntry {
+interface OamEntry {
   /** Pixel offset from the sprite origin */
   dx: number;
   dy: number;

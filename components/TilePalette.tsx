@@ -15,7 +15,7 @@ interface TilePaletteProps {
 }
 
 /** Clickable grid of the tileset, used to pick the brush tile. */
-export function TilePalette({ tiles, selected, onSelect, preset, columns = 8, scale = 3 }: TilePaletteProps) {
+export function TilePalette({ tiles, selected, onSelect, preset, columns = 7, scale = 3 }: TilePaletteProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cell = TILE_SIZE * scale;
   const rows = Math.ceil(tiles.length / columns);

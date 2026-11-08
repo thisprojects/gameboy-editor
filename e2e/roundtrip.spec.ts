@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures';
-import { exportFile, examplePath, readExample, loadProject } from './helpers';
+import { exportFile, examplePath, readExample, loadProject, clickToolbarExport } from './helpers';
 
 /**
  * For every editor: load the example project through the real file input, export it, and compare with the
@@ -41,7 +41,7 @@ for (const { route, dir, name, suffix } of EDITORS) {
 
     test('the export dialog links to the matching example page', async ({ page }) => {
       await page.goto(route);
-      await page.getByRole('button', { name: 'Export RGBDS (.asm)', exact: true }).click();
+      await clickToolbarExport(page, 'Export RGBDS (.asm)');
       const link = page.getByRole('link', { name: 'How do I use this on a Game Boy?' });
       await expect(link).toBeVisible();
       const href = (await link.getAttribute('href'))!;

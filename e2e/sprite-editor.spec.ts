@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures';
-import { exportFile, exportText, canvasSize, pixelAt, clickAt, nearColour, typeNumber } from './helpers';
+import { exportFile, exportText, canvasSize, pixelAt, clickAt, nearColour, typeNumber, clickToolbarExport } from './helpers';
 
 const CANVAS = 'tile-canvas';
 const LIGHTEST = '#9bbc0f';
@@ -138,7 +138,7 @@ test.describe('sprite editor', () => {
     };
     await page.getByTestId('project-input').setInputFiles({ name: 'big_sprite.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(project)) });
     const message = new Promise<string>((resolve) => page.once('dialog', (d) => { resolve(d.message()); void d.accept(); }));
-    await page.getByRole('button', { name: 'Export RGBDS (.asm)', exact: true }).click();
+    await clickToolbarExport(page, 'Export RGBDS (.asm)');
     await page.getByRole('button', { name: 'Export ASM', exact: true }).click();
     expect(await message).toMatch(/512 tiles.*at most 256/);
   });

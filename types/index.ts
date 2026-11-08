@@ -5,8 +5,6 @@ export interface Point {
   y: number;
 }
 
-/** Shade index 0 (lightest) .. 3 (darkest). */
-export type Shade = 0 | 1 | 2 | 3;
 
 export interface TilesetProject {
   version: 1;

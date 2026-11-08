@@ -7,6 +7,7 @@ export const TOOL_HINTS: Record<string, string> = {
   Pan: 'drag to move the view (right or middle mouse button pans with any tool)',
   Stamp: 'paint the selected item; drag to paint continuously',
   Rectangle: 'drag out a rectangle and fill it with the selected item',
+  'Select area': 'click a cell or drag an area, then Clear selection (or Delete) resets it to the empty background',
   Fill: 'flood-fill the connected area with the selected item',
   'Pick tile': 'click a cell to select the tile it holds',
   'Pick metatile': 'click a cell to select the metatile it holds',
@@ -23,7 +24,7 @@ export function toolTitle(label: string): string {
  * (`data-tip`, `aria-label`, its <label> text or its button text) and matched as a prefix.
  * Controls whose name is ambiguous between editors (Add, Delete, Palette ...) carry an explicit `data-tip` instead.
  */
-export const CONTROL_HINTS: Record<string, string> = {
+const CONTROL_HINTS: Record<string, string> = {
   'Load project': 'Open a project file (.json) saved earlier with Save project',
   'Save project': 'Download the whole project as a .json file you can load again later',
   'Import .2bpp': 'Replace the tiles with a raw Game Boy 2bpp tile file',

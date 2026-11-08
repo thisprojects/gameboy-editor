@@ -53,11 +53,11 @@ describe('example projects', () => {
 
 /** Make the next FileReader deliver `content` to readAsText. */
 function deliver(content: string) {
-  jest.spyOn(global, 'FileReader').mockImplementation(function (this: FileReader) {
+  jest.spyOn(global as unknown as Record<string, jest.Mock>, 'FileReader').mockImplementation(function (this: FileReader) {
     const self = this as unknown as { onload: (e: unknown) => void };
     (this as unknown as Record<string, unknown>).readAsText = () => self.onload({ target: { result: content } });
     return this;
-  } as unknown as typeof FileReader);
+  });
 }
 const pick = (name: string) => ({ target: { files: [new File(['x'], name)], value: 'x' } }) as unknown as React.ChangeEvent<HTMLInputElement>;
 
@@ -111,7 +111,7 @@ describe('"Load project" accepts the example project files', () => {
     deliver(level);
     const loadProjectData = jest.fn();
     const hook = renderHook(() =>
-      useLevelProject({ map: [], size: 2, tiles: [], metatiles: [], fileName: 'x', setFileName: jest.fn(), loadProjectData, setLibrary: jest.fn() })
+      useLevelProject({ map: [], mw: 2, mh: 2, tiles: [], metatiles: [], fileName: 'x', setFileName: jest.fn(), loadProjectData, setLibrary: jest.fn() })
     );
     act(() => hook.result.current.loadProject(pick('cave_level.json')));
     expect(global.alert).not.toHaveBeenCalled();

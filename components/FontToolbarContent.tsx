@@ -1,6 +1,9 @@
 'use client';
 
-import { toolTitle } from '@/constants/toolHints';
+import { ToolbarSection } from './ToolbarSection';
+import { ToolGrid } from './ToolGrid';
+import { FileActions } from './FileActions';
+
 import { Tool } from '@/types';
 import { BsPencilFill, BsEraserFill, BsPaintBucket, BsArrowsMove } from 'react-icons/bs';
 import { TbLine } from 'react-icons/tb';
@@ -56,7 +59,7 @@ export function FontToolbarContent(props: FontToolbarContentProps) {
   const code = FIRST_CHAR + selectedGlyph;
 
   return (
-    <div className="space-y-4 text-sm">
+    <div className="flex flex-1 flex-col gap-3 text-sm">
       <div className="border border-gray-600 rounded p-2">
         <div className="text-xs text-gray-400 mb-1">Selected</div>
         <div className="font-mono leading-tight">
@@ -68,26 +71,11 @@ export function FontToolbarContent(props: FontToolbarContentProps) {
         </div>
       </div>
 
-      <div>
-        <div className="text-xs text-gray-400 mb-1">Tools</div>
-        <div className="flex gap-1">
-          {TOOLS.map(({ tool, label, icon }) => (
-            <button
-              key={tool}
-              title={toolTitle(label)}
-              aria-label={label}
-              aria-pressed={currentTool === tool}
-              onClick={() => onSelectTool(tool)}
-              className={`p-2 rounded ${currentTool === tool ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-            >
-              {icon}
-            </button>
-          ))}
-        </div>
-      </div>
+      <ToolbarSection title="Tools">
+        <ToolGrid tools={TOOLS} current={currentTool} onSelect={onSelectTool} />
+      </ToolbarSection>
 
-      <div>
-        <div className="text-xs text-gray-400 mb-1">Shade</div>
+      <ToolbarSection title="Shade">
         <ShadePicker currentShade={currentShade} onShadeChange={onShadeChange} preset={preset} />
         <label className="block text-xs text-gray-400 mt-2 mb-1" htmlFor="palette-preset">Palette</label>
         <select
@@ -102,36 +90,41 @@ export function FontToolbarContent(props: FontToolbarContentProps) {
         </select>
         <label className="block text-xs text-gray-400 mt-2" htmlFor="zoom">Zoom ({pixelSize}px)</label>
         <input id="zoom" type="range" min={4} max={40} value={pixelSize} onChange={(e) => onPixelSizeChange(Number(e.target.value))} className="w-full" />
-      </div>
+      </ToolbarSection>
 
-      <div className="space-y-1">
-        <div className="text-xs text-gray-400">Glyph</div>
+      <ToolbarSection title="Glyph">
+        <div className="space-y-1">
         <div className="flex gap-1">
           <button className={btn} onClick={props.onCopy}>Copy</button>
           <button className={btn} onClick={props.onPaste} disabled={!props.hasClipboard}>Paste</button>
         </div>
         <button className={btn} onClick={props.onClearGlyph}>Clear glyph</button>
         <button className={btn} onClick={props.onResetGlyph}>Reset to starter</button>
-      </div>
+        </div>
+      </ToolbarSection>
 
       <UndoRedoButtons onUndo={props.onUndo} onRedo={props.onRedo} canUndo={props.canUndo} canRedo={props.canRedo} historyIndex={props.historyIndex} />
 
-      <div className="space-y-1">
-        <div className="text-xs text-gray-400">Font</div>
+      <ToolbarSection title="Font">
+        <div className="space-y-1">
         <button className={btn} onClick={props.onLoadStarter}>Load starter font</button>
         <button className="w-full px-3 py-2 rounded text-sm bg-red-700 text-white hover:bg-red-600" onClick={props.onClearAll}>Clear all</button>
-      </div>
+        </div>
+      </ToolbarSection>
 
-      <div className="space-y-1">
-        <div className="text-xs text-gray-400">File</div>
-        <button className={btn} onClick={props.onLoad}>Load project</button>
-        <button className={btn} onClick={props.onSave}>Save project</button>
-        <button className={btn} onClick={props.onImport2bpp}>Import .2bpp</button>
-        <button className={btn} onClick={props.onExportASM}>Export RGBDS (.asm)</button>
-        <button className={btn} onClick={props.onExportC}>Export C (.h)</button>
-        <button className={btn} onClick={props.onExport2bpp}>Export .2bpp</button>
-        <button className={btn} onClick={props.onExport1bpp}>Export .1bpp</button>
-      </div>
+      <FileActions
+        onLoad={props.onLoad}
+        onSave={props.onSave}
+        imports={[
+          { label: 'Import .2bpp', onClick: props.onImport2bpp },
+        ]}
+        exports={[
+          { label: 'Export RGBDS (.asm)', onClick: props.onExportASM },
+          { label: 'Export C (.h)', onClick: props.onExportC },
+          { label: 'Export .2bpp', onClick: props.onExport2bpp },
+          { label: 'Export .1bpp', onClick: props.onExport1bpp },
+        ]}
+      />
     </div>
   );
 }

@@ -22,7 +22,8 @@ interface UseLevelProjectProps {
   fileName: string;
   setFileName: (name: string) => void;
   loadProjectData: (data: { map: number[][]; library: Library }) => void;
-  setLibrary: (lib: Library) => void;
+  /** Returns true when painted cells were shifted by an inserted blank metatile 0. */
+  setLibrary: (lib: Library) => boolean | void;
 }
 
 export function useLevelProject({
@@ -112,7 +113,11 @@ export function useLevelProject({
             alert('Invalid file: not a Game Boy metatile project.');
             return;
           }
-          setLibrary({ ...dims, tiles: d.tiles, metatiles: d.metatiles });
+          if (setLibrary({ ...dims, tiles: d.tiles, metatiles: d.metatiles })) {
+            alert(
+              'This library has no empty metatile 0, so one was added in front. Metatile numbers moved up by one: cells you had already painted now show the next metatile along. Undo is not available for an import; re-import or repaint if that is not what you want.'
+            );
+          }
         } catch {
           alert('Failed to import library: invalid JSON.');
         }

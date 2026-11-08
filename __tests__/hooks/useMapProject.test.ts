@@ -20,12 +20,12 @@ function setup(exportArea: ExportArea = 'full', map = createEmptyMap()) {
 const changeEvent = (file: File) => ({ target: { files: [file], value: 'x' } }) as unknown as React.ChangeEvent<HTMLInputElement>;
 
 function mockReader(result: string | ArrayBuffer) {
-  jest.spyOn(global, 'FileReader').mockImplementation(function (this: FileReader) {
+  jest.spyOn(global as unknown as Record<string, jest.Mock>, 'FileReader').mockImplementation(function (this: FileReader) {
     const self = this as unknown as { onload: (e: unknown) => void };
     (this as unknown as Record<string, unknown>).readAsText = () => self.onload({ target: { result } });
     (this as unknown as Record<string, unknown>).readAsArrayBuffer = () => self.onload({ target: { result } });
     return this;
-  } as unknown as typeof FileReader);
+  });
 }
 
 const validProject = () => ({ version: 1, type: 'map', map: createEmptyMap(), tiles: [createBlankTile(), createSolidTile(2)] });

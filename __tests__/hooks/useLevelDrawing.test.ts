@@ -34,6 +34,61 @@ describe('useLevelDrawing', () => {
     expect(result.current.map[1][1]).toBe(0);
   });
 
+  it('select tool clears one cell or a dragged area back to metatile 0 (undoable)', () => {
+    const { result } = renderHook(() => useLevelDrawing());
+    act(() => result.current.selectTool('fill'));
+    act(() => result.current.beginStroke({ x: 0, y: 0 }));
+    act(() => result.current.selectTool('select'));
+    act(() => result.current.beginStroke({ x: 2, y: 2 }));
+    act(() => result.current.endStroke({ x: 2, y: 2 }));
+    act(() => result.current.clearSelection());
+    expect(result.current.map[2][2]).toBe(0);
+    expect(result.current.map[2][3]).toBe(1);
+    act(() => result.current.beginStroke({ x: 5, y: 4 }));
+    act(() => result.current.continueStroke({ x: 3, y: 6 }));
+    act(() => result.current.endStroke({ x: 3, y: 6 }));
+    act(() => result.current.clearSelection());
+    for (let y = 4; y <= 6; y++) for (let x = 3; x <= 5; x++) expect(result.current.map[y][x]).toBe(0);
+    expect(result.current.map[4][6]).toBe(1);
+    act(() => result.current.undo());
+    expect(result.current.map[5][4]).toBe(1);
+  });
+
+  it('importing a library whose metatile 0 is drawn inserts an empty metatile 0, so the level stays blank', () => {
+    const { result } = renderHook(() => useLevelDrawing());
+    const lib = lib3();
+    lib.metatiles = [createMetatile(2, 2, 1), createMetatile(2, 2, 1, true)];
+    act(() => result.current.setLibrary(lib));
+    expect(result.current.metatiles).toHaveLength(3);
+    expect(result.current.metatiles[0].tiles.flat().every((t) => result.current.tiles[t].flat().every((p) => p === 0))).toBe(true);
+    expect(result.current.map.flat().every((m) => m === 0)).toBe(true);
+  });
+
+  it('setLibrary reports a shift only when painted cells exist and a blank metatile 0 was inserted', () => {
+    const drawn = lib3();
+    drawn.metatiles = [createMetatile(2, 2, 1), createMetatile(2, 2, 1, true)];
+    const { result } = renderHook(() => useLevelDrawing());
+    let shifted = true;
+    act(() => { shifted = result.current.setLibrary(drawn); });
+    expect(shifted).toBe(false); // the level was still empty
+    act(() => result.current.beginStroke({ x: 0, y: 0 }));
+    act(() => result.current.endStroke(null));
+    act(() => { shifted = result.current.setLibrary(drawn); });
+    expect(shifted).toBe(true); // a cell was painted and the library needed a blank metatile 0
+    act(() => { shifted = result.current.setLibrary(lib3()); });
+    expect(shifted).toBe(false); // this library already starts with a blank metatile
+  });
+
+  it('applies the selected metatile to a selected area', () => {
+    const { result } = renderHook(() => useLevelDrawing());
+    act(() => result.current.selectTool('select'));
+    act(() => result.current.beginStroke({ x: 1, y: 1 }));
+    act(() => result.current.continueStroke({ x: 2, y: 2 }));
+    act(() => result.current.endStroke({ x: 2, y: 2 }));
+    act(() => result.current.applySelected());
+    expect([result.current.map[1][1], result.current.map[2][2], result.current.map[3][3]]).toEqual([1, 1, 0]);
+  });
+
   it('rubber, fill and pick', () => {
     const { result } = renderHook(() => useLevelDrawing());
     act(() => result.current.selectTool('fill'));
@@ -51,31 +106,12 @@ describe('useLevelDrawing', () => {
     expect(result.current.selectedMetatile).toBe(1);
   });
 
-  it('fills rectangles on mouse up, cancels on leave, supports reverse drags', () => {
+  it('switching away from select drops the selection; pan does nothing on stroke', () => {
     const { result } = renderHook(() => useLevelDrawing());
-    act(() => result.current.selectTool('rect'));
-    act(() => result.current.beginStroke({ x: 2, y: 2 }));
-    act(() => result.current.continueStroke({ x: 4, y: 3 }));
-    expect(result.current.rectEnd).toEqual({ x: 4, y: 3 });
-    act(() => result.current.endStroke({ x: 4, y: 3 }));
-    expect(result.current.map[2][2]).toBe(1);
-    expect(result.current.map[3][4]).toBe(1);
-    expect(result.current.map[4][4]).toBe(0);
-    expect(result.current.rectStart).toBeNull();
-    act(() => result.current.beginStroke({ x: 10, y: 10 }));
-    act(() => result.current.endStroke(null));
-    expect(result.current.map[10][10]).toBe(0);
-    act(() => result.current.beginStroke({ x: 9, y: 9 }));
-    act(() => result.current.endStroke({ x: 8, y: 7 }));
-    expect(result.current.map[7][8]).toBe(1);
-  });
-
-  it('selecting a tool cancels a rectangle; pan does nothing on stroke', () => {
-    const { result } = renderHook(() => useLevelDrawing());
-    act(() => result.current.selectTool('rect'));
+    act(() => result.current.selectTool('select'));
     act(() => result.current.beginStroke({ x: 1, y: 1 }));
     act(() => result.current.selectTool('pan'));
-    expect(result.current.rectStart).toBeNull();
+    expect(result.current.selStart).toBeNull();
     act(() => result.current.beginStroke({ x: 1, y: 1 }));
     expect(result.current.map[1][1]).toBe(0);
   });

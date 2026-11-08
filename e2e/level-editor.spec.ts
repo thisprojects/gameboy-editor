@@ -8,7 +8,7 @@ const LIGHTEST = '#9bbc0f';
 const DARKEST = '#0f380f';
 const CELL = 32; // a 2x2-tile metatile is 16 pixels, at zoom 2
 const mid = (n: number) => n * CELL + CELL / 2;
-const metatile = (n: number) => ({ x: (n % 5) * 36 + 18, y: Math.floor(n / 5) * 36 + 18 });
+const metatile = (n: number) => ({ x: (n % 5) * 34 + 17, y: Math.floor(n / 5) * 34 + 17 });
 
 const cave = JSON.parse(readExample('level/cave_level.json')) as {
   size: number; tiles: number[][][]; metatiles: { tiles: number[][]; solid: boolean }[]; map: number[][];
@@ -75,15 +75,16 @@ test.describe('level editor', () => {
     expect(await pixelAt(page, LEVEL, mid(5) - 15, mid(5) - 15 + 2)).toBe('#306230');
   });
 
-  test('rectangle, fill, pick and rubber, and undo', async ({ page }) => {
+  test('select + apply, fill, pick and rubber, and undo', async ({ page }) => {
     const brick = metatile(2);
     await clickAt(page, PALETTE, brick.x, brick.y);
-    await page.getByLabel('Rectangle').click();
+    await page.getByLabel('Select area').click();
     const box = (await page.getByTestId(LEVEL).boundingBox())!;
     await page.mouse.move(box.x + mid(2), box.y + mid(2));
     await page.mouse.down();
     await page.mouse.move(box.x + mid(4), box.y + mid(3), { steps: 5 });
     await page.mouse.up();
+    await page.getByRole('button', { name: 'Apply metatile to selection' }).click();
     const expected = cave.map.map((r) => [...r]);
     for (let y = 2; y <= 3; y++) for (let x = 2; x <= 4; x++) expected[y][x] = 2;
     expect(await exportTilemap(page)).toEqual(expandedTilemap(expected));

@@ -20,7 +20,7 @@ interface MetatilePaletteProps {
 const PAD = 2;
 
 /** Clickable thumbnails of the metatile library. Solid metatiles get a red corner marker. */
-export function MetatilePalette({ metatiles, tiles, selected, onSelect, preset, columns = 5, thumb = 32 }: MetatilePaletteProps) {
+export function MetatilePalette({ metatiles, tiles, selected, onSelect, preset, columns = 5, thumb = 30 }: MetatilePaletteProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cell = thumb + PAD * 2;
   const rows = Math.ceil(metatiles.length / columns);

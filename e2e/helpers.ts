@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { Page, expect } from '@playwright/test';
 
-export const EXAMPLES = path.join(__dirname, '..', 'examples');
+const EXAMPLES = path.join(__dirname, '..', 'examples');
 export const examplePath = (file: string) => path.join(EXAMPLES, file);
 export const readExample = (file: string) => fs.readFileSync(examplePath(file), 'utf-8');
 
@@ -11,12 +11,21 @@ export async function loadProject(page: Page, file: string) {
   await page.getByTestId('project-input').setInputFiles(file);
 }
 
+/** Open the toolbar's Export menu (it is a pop-up above the pinned file actions) and click one entry. */
+export async function clickToolbarExport(page: Page, toolbarButton: string) {
+  if (toolbarButton.startsWith('Export')) {
+    const menu = page.getByTestId('file-actions').locator('details');
+    if (!(await menu.evaluate((d: HTMLDetailsElement) => d.open))) await menu.locator('summary').click();
+  }
+  await page.getByRole('button', { name: toolbarButton, exact: true }).click();
+}
+
 /**
  * Click an export button in the toolbar, name the file in the dialog, confirm, and return what was downloaded.
  * (The dialog's confirm button is called e.g. "Export ASM", the toolbar's e.g. "Export RGBDS (.asm)".)
  */
 export async function exportFile(page: Page, toolbarButton: string, confirmButton: string, fileName?: string) {
-  await page.getByRole('button', { name: toolbarButton, exact: true }).click();
+  await clickToolbarExport(page, toolbarButton);
   const dialogInput = page.locator('div.fixed input[type="text"]');
   await expect(dialogInput).toBeVisible();
   if (fileName !== undefined) await dialogInput.fill(fileName);

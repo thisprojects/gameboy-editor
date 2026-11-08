@@ -1,5 +1,8 @@
 'use client';
 
+import { ToolbarSection } from './ToolbarSection';
+import { FileActions } from './FileActions';
+
 import { BsPlayFill, BsStopFill } from 'react-icons/bs';
 import { MusicPattern } from '@/types/music';
 import { MAX_ORDER_LENGTH, MAX_PATTERN_ROWS, MAX_PATTERNS, MAX_TICKS_PER_ROW, MIN_PATTERN_ROWS, FRAME_RATE } from '@/constants/music';
@@ -45,7 +48,7 @@ export function MusicToolbarContent(props: MusicToolbarContentProps) {
     props.onOrderListChange(orderList.map((p, i) => (i === position ? pattern : p)));
 
   return (
-    <div className="space-y-4 text-sm">
+    <div className="flex flex-1 flex-col gap-3 text-sm">
       <div className="flex gap-2">
         <button
           onClick={isPlaying ? props.onStop : props.onPlay}
@@ -57,7 +60,7 @@ export function MusicToolbarContent(props: MusicToolbarContentProps) {
         </button>
       </div>
 
-      <div>
+      <ToolbarSection title="Patterns">
         <label className="block text-xs text-gray-400 mb-1" htmlFor="pattern-select">Pattern</label>
         <select
           id="pattern-select"
@@ -79,19 +82,18 @@ export function MusicToolbarContent(props: MusicToolbarContentProps) {
           onCommit={props.onPatternRowsChange}
           className="w-20 bg-gray-700 rounded px-2 py-1"
         />
-      </div>
+      </ToolbarSection>
 
-      <div>
+      <ToolbarSection title="Tempo">
         <label className="block text-xs text-gray-400 mb-1" htmlFor="ticks">Speed: frames per row ({rowsPerSecond.toFixed(1)} rows/s)</label>
         <NumberField
           id="ticks" min={1} max={MAX_TICKS_PER_ROW} value={ticksPerRow}
           onCommit={props.onTicksPerRowChange}
           className="w-20 bg-gray-700 rounded px-2 py-1"
         />
-      </div>
+      </ToolbarSection>
 
-      <div>
-        <div className="text-xs text-gray-400 mb-1">Order ({orderList.length}/{MAX_ORDER_LENGTH}) — the song loops</div>
+      <ToolbarSection title={<>Order ({orderList.length}/{MAX_ORDER_LENGTH}) — the song loops</>}>
         <ol className="space-y-1">
           {orderList.map((patternIndex, position) => (
             <li key={position} className={`flex items-center gap-1 ${isPlaying && position === orderIndex ? 'text-green-400' : ''}`}>
@@ -124,18 +126,20 @@ export function MusicToolbarContent(props: MusicToolbarContentProps) {
         >
           Add current pattern to order
         </button>
-      </div>
+      </ToolbarSection>
 
       <button className={btn} onClick={props.onManageInstruments}>Instruments…</button>
 
       <UndoRedoButtons onUndo={props.onUndo} onRedo={props.onRedo} canUndo={props.canUndo} canRedo={props.canRedo} historyIndex={props.historyIndex} />
 
-      <div className="space-y-1">
-        <button className={btn} onClick={props.onLoad}>Load project</button>
-        <button className={btn} onClick={props.onSave}>Save project</button>
-        <button className={btn} onClick={props.onExportAsm}>Export RGBDS (.asm)</button>
-        <button className={btn} onClick={props.onExportC}>Export C (.h)</button>
-      </div>
+      <FileActions
+        onLoad={props.onLoad}
+        onSave={props.onSave}
+        exports={[
+          { label: 'Export RGBDS (.asm)', onClick: props.onExportAsm },
+          { label: 'Export C (.h)', onClick: props.onExportC },
+        ]}
+      />
     </div>
   );
 }

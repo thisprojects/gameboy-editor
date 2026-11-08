@@ -26,11 +26,11 @@ function setup(frames = [frame(true)]) {
 const changeEvent = (file: File) => ({ target: { files: [file], value: 'x' } }) as unknown as React.ChangeEvent<HTMLInputElement>;
 
 function mockReader(result: string) {
-  jest.spyOn(global, 'FileReader').mockImplementation(function (this: FileReader) {
+  jest.spyOn(global as unknown as Record<string, jest.Mock>, 'FileReader').mockImplementation(function (this: FileReader) {
     const self = this as unknown as { onload: (e: unknown) => void };
     (this as unknown as Record<string, unknown>).readAsText = () => self.onload({ target: { result } });
     return this;
-  } as unknown as typeof FileReader);
+  });
 }
 
 const valid = {
@@ -156,11 +156,11 @@ describe('useSpriteProject - limits and strict loading', () => {
       frames: [{ pixels: Array.from({ length: 8 }, () => Array(8).fill(0)), duration: 6 }],
     });
     const load = (project: unknown) => {
-      jest.spyOn(global, 'FileReader').mockImplementation(function (this: FileReader) {
+      jest.spyOn(global as unknown as Record<string, jest.Mock>, 'FileReader').mockImplementation(function (this: FileReader) {
         const self = this as unknown as { onload: (e: unknown) => void };
         (this as unknown as Record<string, unknown>).readAsText = () => self.onload({ target: { result: JSON.stringify(project) } });
         return this;
-      } as unknown as typeof FileReader);
+      });
       const loadProjectData = jest.fn();
       const { result } = renderHook(() =>
         useSpriteProject({ frames: [], tilesWidth: 1, tilesHeight: 1, objSize: '8x8', palette: 0, priority: false, fileName: 'x', setFileName: jest.fn(), loadProjectData })

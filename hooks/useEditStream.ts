@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react';
 
 /** Edits of the same thing closer together than this (in ms) share one undo step. */
-export const EDIT_STREAM_MS = 800;
+const EDIT_STREAM_MS = 800;
 
 /**
  * For edits that arrive as a stream - dragging a slider, typing in a field - so that the whole stream is one

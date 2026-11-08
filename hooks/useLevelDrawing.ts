@@ -2,12 +2,14 @@ import { useState, useCallback } from 'react';
 import { useHistory } from './useHistory';
 import { Point } from '@/types';
 import { MapTool, Tile } from '@/types/map';
+
+export type LevelTool = Exclude<MapTool, 'rect'> | 'select';
 import { Metatile } from '@/types/metatile';
 import { DEFAULT_LEVEL_SIZE, maxLevelMetatiles } from '@/constants/level';
 import { floodFill } from '@/utils/drawing';
-import { fillRectGrid, resizeGrid } from '@/utils/grid';
+import { resizeGrid } from '@/utils/grid';
 import { clampMap } from '@/utils/map';
-import { defaultLibrary } from '@/utils/metatile';
+import { defaultLibrary, withEmptyBackground } from '@/utils/metatile';
 
 interface LevelState {
   map: number[][];
@@ -38,10 +40,12 @@ export function useLevelDrawing() {
   const { mw, mh, tiles, metatiles } = library;
 
   const [selectedMetatile, setSelectedMetatile] = useState(1);
-  const [currentTool, setCurrentTool] = useState<MapTool>('stamp');
+  const [currentTool, setCurrentTool] = useState<LevelTool>('stamp');
   const [isDrawing, setIsDrawing] = useState(false);
-  const [rectStart, setRectStart] = useState<Point | null>(null);
-  const [rectEnd, setRectEnd] = useState<Point | null>(null);
+  // Selected area (inclusive cell corners) for the select tool; persists after the mouse is released
+  const [selStart, setSelStart] = useState<Point | null>(null);
+  const [selEnd, setSelEnd] = useState<Point | null>(null);
+  const [selecting, setSelecting] = useState(false);
 
   // View options. Screen scroll position is in tiles.
   const [scx, setScx] = useState(0);
@@ -66,10 +70,13 @@ export function useLevelDrawing() {
     [setState]
   );
 
-  const selectTool = useCallback((tool: MapTool) => {
+  const selectTool = useCallback((tool: LevelTool) => {
     setCurrentTool(tool);
-    setRectStart(null);
-    setRectEnd(null);
+    if (tool !== 'select') {
+      setSelStart(null);
+      setSelEnd(null);
+    }
+    setSelecting(false);
     setIsDrawing(false);
   }, []);
 
@@ -83,9 +90,10 @@ export function useLevelDrawing() {
           setIsDrawing(true);
           setCell(c, currentTool === 'stamp' ? selectedMetatile : 0);
           break;
-        case 'rect':
-          setRectStart(c);
-          setRectEnd(c);
+        case 'select':
+          setSelStart(c);
+          setSelEnd(c);
+          setSelecting(true);
           break;
         case 'fill':
           pushHistory();
@@ -103,26 +111,41 @@ export function useLevelDrawing() {
     (c: Point) => {
       if (isDrawing && (currentTool === 'stamp' || currentTool === 'rubber')) {
         setCell(c, currentTool === 'stamp' ? selectedMetatile : 0);
-      } else if (rectStart && currentTool === 'rect') {
-        setRectEnd(c);
+      } else if (selecting && currentTool === 'select') {
+        setSelEnd(c);
       }
     },
-    [isDrawing, currentTool, selectedMetatile, rectStart, setCell]
+    [selecting, isDrawing, currentTool, selectedMetatile, setCell]
   );
 
-  /** Mouse up (with the cell) or mouse leave (null, which cancels a rectangle). */
-  const endStroke = useCallback(
-    (c: Point | null) => {
-      if (rectStart && currentTool === 'rect' && c) {
-        pushHistory();
-        setState((prev) => ({ map: fillRectGrid(prev.map, rectStart, c, selectedMetatile) }));
-      }
-      setRectStart(null);
-      setRectEnd(null);
-      setIsDrawing(false);
+  /** Mouse up or mouse leave: ends the current stroke or selection drag (the selection itself stays). */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const endStroke = useCallback((_c?: Point | null) => {
+    setIsDrawing(false);
+    setSelecting(false);
+  }, []);
+
+  /** Set every selected cell (one cell or a dragged area) to a metatile. */
+  const applyToSelection = useCallback(
+    (value: number) => {
+      if (!selStart || !selEnd) return;
+      const x0 = Math.min(selStart.x, selEnd.x);
+      const x1 = Math.max(selStart.x, selEnd.x);
+      const y0 = Math.min(selStart.y, selEnd.y);
+      const y1 = Math.max(selStart.y, selEnd.y);
+      pushHistory();
+      setState((prev) => ({
+        map: prev.map.map((row, y) => (y < y0 || y > y1 ? row : row.map((v, x) => (x < x0 || x > x1 ? v : value)))),
+      }));
     },
-    [rectStart, currentTool, selectedMetatile, pushHistory, setState]
+    [selStart, selEnd, pushHistory, setState]
   );
+
+  /** Reset the selection to the empty background (metatile 0). */
+  const clearSelection = useCallback(() => applyToSelection(0), [applyToSelection]);
+
+  /** Put the selected metatile into every selected cell. */
+  const applySelected = useCallback(() => applyToSelection(selectedMetatile), [applyToSelection, selectedMetatile]);
 
   const clearMap = useCallback(() => {
     pushHistory();
@@ -142,7 +165,10 @@ export function useLevelDrawing() {
 
   /** Replace the library; map cells pointing past the new metatile list are reset to 0 and the map is cropped to fit. */
   const setLibrary = useCallback(
-    (lib: Library) => {
+    (imported: Library): boolean => {
+      const lib = withEmptyBackground(imported);
+      // a blank metatile was put in front, so already painted cells now point one metatile further along
+      const shifted = lib !== imported && map.some((row) => row.some((v) => v !== 0));
       clearHistory();
       setLibraryState(lib);
       const maxW = maxLevelMetatiles(lib.mw);
@@ -151,8 +177,9 @@ export function useLevelDrawing() {
         map: clampMap(resizeGrid(prev.map, Math.min(prev.map[0].length, maxW), Math.min(prev.map.length, maxH)), lib.metatiles.length),
       }));
       setSelectedMetatile((s) => Math.min(s, lib.metatiles.length - 1));
+      return shifted;
     },
-    [clearHistory, setState]
+    [map, clearHistory, setState]
   );
 
   const loadProjectData = useCallback(
@@ -182,8 +209,10 @@ export function useLevelDrawing() {
     setSelectedMetatile,
     currentTool,
     selectTool,
-    rectStart,
-    rectEnd,
+    selStart,
+    selEnd,
+    clearSelection,
+    applySelected,
     beginStroke,
     continueStroke,
     endStroke,

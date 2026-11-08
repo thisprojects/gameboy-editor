@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // keep the dev badge from covering the toolbar's Export button
+  devIndicators: { position: 'bottom-right' },
   // The Map Editor was renamed Background Editor; keep old links and bookmarks working.
   async redirects() {
     return [

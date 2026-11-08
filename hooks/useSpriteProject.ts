@@ -8,7 +8,7 @@ import { downloadBlob } from '@/utils/download';
 import { isIntIn, isShade } from '@/utils/validate';
 
 /** A sprite's tile numbers are one byte each. */
-export const MAX_SPRITE_EXPORT_TILES = 256;
+const MAX_SPRITE_EXPORT_TILES = 256;
 
 interface LoadedSprite {
   tilesWidth: number;

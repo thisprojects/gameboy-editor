@@ -222,7 +222,7 @@ describe('LevelToolbarContent', () => {
   it('selects tools and the library', () => {
     const p = levelToolbar();
     expect(screen.getByLabelText('Stamp')).toHaveAttribute('aria-pressed', 'true');
-    for (const [label, tool] of [['Rectangle', 'rect'], ['Fill', 'fill'], ['Pick metatile', 'pick'], ['Rubber', 'rubber'], ['Pan', 'pan']]) {
+    for (const [label, tool] of [['Select area', 'select'], ['Fill', 'fill'], ['Pick metatile', 'pick'], ['Rubber', 'rubber'], ['Pan', 'pan']]) {
       fireEvent.click(screen.getByLabelText(label));
       expect(p.onSelectTool).toHaveBeenCalledWith(tool);
     }

@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 const TEXT_INPUT_TYPES = ['text', 'number', 'search', 'url', 'email', 'password', 'tel'];
 
 /** True when the event came from somewhere the user types text. */
-export function isTextEntry(target: EventTarget | null): boolean {
+function isTextEntry(target: EventTarget | null): boolean {
   const el = target as HTMLElement | null;
   if (!el || !el.tagName) return false;
   if (el.isContentEditable || el.tagName === 'TEXTAREA') return true;

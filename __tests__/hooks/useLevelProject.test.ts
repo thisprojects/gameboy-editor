@@ -23,11 +23,11 @@ function setup() {
 const changeEvent = (file: File) => ({ target: { files: [file], value: 'x' } }) as unknown as React.ChangeEvent<HTMLInputElement>;
 
 function mockReader(result: string) {
-  jest.spyOn(global, 'FileReader').mockImplementation(function (this: FileReader) {
+  jest.spyOn(global as unknown as Record<string, jest.Mock>, 'FileReader').mockImplementation(function (this: FileReader) {
     const self = this as unknown as { onload: (e: unknown) => void };
     (this as unknown as Record<string, unknown>).readAsText = () => self.onload({ target: { result } });
     return this;
-  } as unknown as typeof FileReader);
+  });
 }
 
 const level = () => ({ version: 1, type: 'level', size: 2, tiles, metatiles, map });
@@ -64,6 +64,19 @@ describe('useLevelProject', () => {
     act(() => result.current.loadProject(changeEvent(new File(['x'], 'boss_level.json'))));
     expect(loadProjectData).toHaveBeenCalledWith({ map, library: { mw: 2, mh: 2, tiles, metatiles } });
     expect(setFileName).toHaveBeenCalledWith('boss');
+  });
+
+  it('warns when the import shifted painted cells (setLibrary reports it), and not otherwise', () => {
+    mockReader(JSON.stringify(library()));
+    const { result, setLibrary } = setup();
+    (global.alert as jest.Mock).mockClear();
+    setLibrary.mockReturnValueOnce(true);
+    act(() => result.current.importLibrary(changeEvent(new File(['x'], 'set_metatiles.json'))));
+    expect(global.alert).toHaveBeenCalledWith(expect.stringMatching(/moved up by one/));
+    (global.alert as jest.Mock).mockClear();
+    mockReader(JSON.stringify(library()));
+    act(() => result.current.importLibrary(changeEvent(new File(['x'], 'set_metatiles.json'))));
+    expect(global.alert).not.toHaveBeenCalled();
   });
 
   it.each([

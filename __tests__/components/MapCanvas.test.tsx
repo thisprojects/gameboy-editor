@@ -130,12 +130,12 @@ describe('TilePalette', () => {
     return { canvas, onSelect };
   }
 
-  it('selects the clicked tile (24px cells, 8 columns)', () => {
+  it('selects the clicked tile (24px cells, 7 columns)', () => {
     const { canvas, onSelect } = palette();
     fireEvent.click(canvas, { clientX: 30, clientY: 5 }); // col 1, row 0
     expect(onSelect).toHaveBeenCalledWith(1);
-    fireEvent.click(canvas, { clientX: 5, clientY: 30 }); // col 0, row 1 -> index 8
-    expect(onSelect).toHaveBeenCalledWith(8);
+    fireEvent.click(canvas, { clientX: 5, clientY: 30 }); // col 0, row 1 -> index 7
+    expect(onSelect).toHaveBeenCalledWith(7);
   });
 
   it('ignores clicks beyond the last tile', () => {

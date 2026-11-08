@@ -10,7 +10,6 @@ import {
   MIN_OCTAVE,
   MIN_PATTERN_ROWS,
   MUSIC_CHANNELS,
-  NOTE_COUNT,
   NOTE_NAMES,
   NOTES_PER_OCTAVE,
   REG,
@@ -225,4 +224,3 @@ export function isValidSong(d: unknown): d is MusicProjectData {
   );
 }
 
-export { NOTE_COUNT };

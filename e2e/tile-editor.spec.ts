@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures';
-import { exportFile, canvasSize, pixelAt, clickAt, zoomWheel } from './helpers';
+import { exportFile, canvasSize, pixelAt, clickAt, zoomWheel, clickToolbarExport } from './helpers';
 
 const CANVAS = 'tile-canvas';
 // Classic Green palette: shade 0 is the lightest, shade 3 the darkest; the canvas is 4x4 tiles at 16 px per pixel
@@ -170,7 +170,7 @@ test.describe('tile editor', () => {
 
   test('exporting an empty canvas explains that there is nothing to export', async ({ page }) => {
     const message = new Promise<string>((resolve) => page.once('dialog', (d) => { resolve(d.message()); void d.accept(); }));
-    await page.getByRole('button', { name: 'Export RGBDS (.asm)', exact: true }).click();
+    await clickToolbarExport(page, 'Export RGBDS (.asm)');
     await page.getByRole('button', { name: 'Export ASM', exact: true }).click();
     expect(await message).toMatch(/Nothing to export/);
   });

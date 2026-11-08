@@ -1,13 +1,8 @@
 /** Game Boy (DMG) hardware constants. */
 export const TILE_SIZE = 8;
-export const SCREEN_WIDTH = 160;
-export const SCREEN_HEIGHT = 144;
 export const SCREEN_TILES_X = 20;
 export const SCREEN_TILES_Y = 18;
-export const BG_MAP_TILES = 32; // 32x32 tile background map
 export const MAX_TILES = 384; // VRAM tile capacity
-export const MAX_SPRITES = 40; // OAM entries
-export const SHADES = 4; // 2bpp
 export const BYTES_PER_TILE = 16;
 
 // Tile editor defaults

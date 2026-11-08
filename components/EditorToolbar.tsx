@@ -40,12 +40,12 @@ export function EditorToolbar({
 
       {/* Left Toolbar */}
       <div
-        className={`fixed top-10 left-0 ${widthClassName ?? DEFAULT_WIDTH_CLASS} h-[calc(100%-40px)] bg-gray-800 shadow-xl z-40 transition-transform duration-300 overflow-y-auto ${
+        className={`fixed top-10 left-0 ${widthClassName ?? DEFAULT_WIDTH_CLASS} h-[calc(100%-40px)] bg-gray-800 shadow-xl z-40 transition-transform duration-300 flex flex-col ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         {/* Toolbar Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-700">
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-700 px-4 py-3">
           <div className="flex items-center gap-2">
             <h1 className="text-lg font-bold">{title}</h1>
             {infoId && infoDescription && (
@@ -66,8 +66,8 @@ export function EditorToolbar({
         </div>
 
         {/* Toolbar Content */}
-        <div className="p-4 pr-5 space-y-4">
-          {children}
+        <div className="min-h-0 flex-1 scroll-pb-36 overflow-y-auto">
+          <div className="flex min-h-full flex-col p-3">{children}</div>
         </div>
       </div>
     </>

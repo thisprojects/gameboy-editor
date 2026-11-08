@@ -52,11 +52,16 @@ export function LevelInstructionsModal({ isOpen, onClose }: LevelInstructionsMod
               to metatile 0, and the level is cropped if the new metatile size allows fewer cells (a level is at most 256×256 tiles, so wider metatiles mean fewer cells across). Solid metatiles are tinted
               red when <em>Show collision</em> is on.
             </p>
+            <p className="mt-2">
+              Metatile 0 is the empty background, so a new level starts blank. If the imported library&apos;s first metatile
+              is not empty, a blank metatile is inserted at position 0 and your metatiles move up by one (the exported
+              tables include it).
+            </p>
           </section>
           <section>
             <h3 className="text-base font-semibold text-white mb-2">Painting</h3>
             <p>
-              Stamp paints single cells, Rectangle fills a dragged area, Fill flood-fills matching metatiles, Pick copies a
+              Stamp paints single cells, Select area picks a cell or dragged area to fill with the selected metatile (Apply) or clear (Delete), Fill flood-fills matching metatiles, Pick copies a
               metatile from the level and Rubber writes metatile 0.
             </p>
           </section>

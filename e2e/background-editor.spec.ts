@@ -7,7 +7,7 @@ const LIGHTEST = '#9bbc0f';
 const DARKEST = '#0f380f';
 const CELL = 24; // 8 pixels x zoom 3
 const mid = (n: number) => n * CELL + CELL / 2;
-const paletteTile = (n: number) => ({ x: (n % 8) * 24 + 12, y: Math.floor(n / 8) * 24 + 12 });
+const paletteTile = (n: number) => ({ x: (n % 7) * 24 + 12, y: Math.floor(n / 7) * 24 + 12 });
 const meadow: { map: number[][] } = JSON.parse(readExample('map/meadow_map.json'));
 
 async function exportMap(page: import('@playwright/test').Page, name = 'm') {

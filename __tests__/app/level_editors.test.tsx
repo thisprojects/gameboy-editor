@@ -124,15 +124,22 @@ describe('Level editor page', () => {
     expect(undo).toBeDisabled();
   });
 
-  it('draws a rectangle preview while dragging', () => {
+  it('select tool: apply the metatile, clear with the button and with Delete', () => {
     render(<LevelEditorPage />);
-    fireEvent.click(screen.getByLabelText('Rectangle'));
-    const canvas = screen.getByTestId('level-canvas');
-    jest.spyOn(canvas, 'getBoundingClientRect').mockReturnValue(rect(4096, 4096));
-    fireEvent.mouseDown(canvas, { clientX: 2, clientY: 2 });
-    fireEvent.mouseMove(canvas, { clientX: 100, clientY: 70 });
-    fireEvent.mouseUp(canvas, { clientX: 100, clientY: 70 });
-    expect(screen.getByTitle('Undo (Ctrl+Z)')).toBeEnabled();
+    const undo = screen.getByTitle('Undo (Ctrl+Z)');
+    fireEvent.click(screen.getByLabelText('Select area'));
+    const apply = screen.getByText('Apply metatile to selection');
+    const clear = screen.getByText('Clear selection');
+    expect(apply).toBeDisabled();
+    expect(clear).toBeDisabled();
+    paint('level-canvas', 32, 1, 1);
+    expect(undo).toBeDisabled(); // selecting changes nothing
+    fireEvent.click(apply);
+    expect(undo).toBeEnabled();
+    fireEvent.click(clear);
+    fireEvent.keyDown(document, { key: 'Delete' });
+    fireEvent.click(screen.getByLabelText('Stamp')); // leaving the tool drops the selection
+    expect(screen.queryByText('Clear selection')).not.toBeInTheDocument();
   });
 
   it('changes level size, palette, view options and zoom; clears the level', () => {

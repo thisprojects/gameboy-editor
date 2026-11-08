@@ -7,8 +7,8 @@ const METATILES = 'metatile-palette';
 const LIGHTEST = '#9bbc0f';
 const DARKEST = '#0f380f';
 const TILE = 64;
-const tileCell = (n: number) => ({ x: (n % 8) * 24 + 12, y: Math.floor(n / 8) * 24 + 12 });
-const metatileCell = (n: number) => ({ x: (n % 5) * 36 + 18, y: Math.floor(n / 5) * 36 + 18 });
+const tileCell = (n: number) => ({ x: (n % 7) * 24 + 12, y: Math.floor(n / 7) * 24 + 12 });
+const metatileCell = (n: number) => ({ x: (n % 5) * 34 + 17, y: Math.floor(n / 5) * 34 + 17 });
 
 test.describe('metatile editor', () => {
   test.beforeEach(async ({ page }) => {
