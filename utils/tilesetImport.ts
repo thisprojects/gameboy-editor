@@ -1,5 +1,7 @@
 import { TILE_SIZE } from '@/constants';
+import { MAX_TILES, MAX_TILES_WIDTH } from '@/constants';
 import { MAX_MAP_TILES } from '@/constants/map';
+import { isShade } from '@/utils/validate';
 import { Tile } from '@/types/map';
 import { decodeTileset } from '@/utils/encode';
 import { isValidTileset, tilesFromPixels, trimTiles } from '@/utils/map';
@@ -39,11 +41,15 @@ export function readTilesetFile(file: File, onTiles: (tiles: Tile[]) => void): v
         d?.type === 'tileset' &&
         Number.isInteger(d.tilesWidth) &&
         Number.isInteger(d.tilesHeight) &&
+        d.tilesWidth >= 1 &&
+        d.tilesWidth <= MAX_TILES_WIDTH &&
+        d.tilesHeight >= 1 &&
+        d.tilesWidth * d.tilesHeight <= MAX_TILES && // checked before anything is built from the declared size
         Array.isArray(d.pixels) &&
         d.pixels.length === d.tilesHeight * TILE_SIZE &&
-        d.pixels.every((r: unknown) => Array.isArray(r) && r.length === d.tilesWidth * TILE_SIZE);
+        d.pixels.every((r: unknown) => Array.isArray(r) && r.length === d.tilesWidth * TILE_SIZE && r.every(isShade));
       if (!ok) {
-        alert('Invalid file: not a Game Boy tileset project.');
+        alert('Invalid file: not a Game Boy tileset project (or its size or shades are out of range).');
         return;
       }
       const imported = tilesFromPixels(d.pixels, d.tilesWidth, d.tilesHeight);

@@ -54,7 +54,7 @@ describe('MapCanvas', () => {
     expect(props.onEndStroke).toHaveBeenCalledWith(null);
   });
 
-  it('pans with right/middle button and the pan tool, without painting', () => {
+  it('right/middle button does not paint', () => {
     const { props, canvas } = setup();
     fireEvent.mouseDown(canvas, at(1, 1, { button: 2 }));
     fireEvent.mouseMove(canvas, at(3, 3));
@@ -62,7 +62,6 @@ describe('MapCanvas', () => {
     fireEvent.mouseDown(canvas, at(1, 1, { button: 1 }));
     fireEvent.mouseLeave(canvas);
     expect(props.onBeginStroke).not.toHaveBeenCalled();
-    expect(props.onEndStroke).not.toHaveBeenCalled();
   });
 
   it('pan tool pans with the left button and never begins a stroke', () => {

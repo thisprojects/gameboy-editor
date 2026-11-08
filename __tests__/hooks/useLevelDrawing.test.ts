@@ -64,6 +64,19 @@ describe('useLevelDrawing', () => {
     expect(result.current.map.flat().every((m) => m === 0)).toBe(true);
   });
 
+  it('painted cells follow their metatiles when a blank metatile 0 is inserted', () => {
+    const drawn = lib3();
+    drawn.metatiles = [createMetatile(2, 2, 1), createMetatile(2, 2, 1, true)];
+    const { result } = renderHook(() => useLevelDrawing());
+    act(() => result.current.beginStroke({ x: 0, y: 0 }));
+    act(() => result.current.endStroke(null));
+    const painted = result.current.map[0][0];
+    expect(painted).not.toBe(0);
+    act(() => { result.current.setLibrary(drawn); });
+    expect(result.current.map[0][0]).toBe(painted + 1);
+    expect(result.current.map[1][1]).toBe(0);
+  });
+
   it('setLibrary reports a shift only when painted cells exist and a blank metatile 0 was inserted', () => {
     const drawn = lib3();
     drawn.metatiles = [createMetatile(2, 2, 1), createMetatile(2, 2, 1, true)];

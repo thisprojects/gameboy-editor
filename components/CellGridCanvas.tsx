@@ -31,7 +31,7 @@ interface CellGridCanvasProps {
   testId?: string;
 }
 
-/** Generic editable grid of cells with zoom (wheel) and pan (right/middle button or pan tool). */
+/** Generic editable grid of cells with zoom (wheel) and pan (pan tool only). */
 export function CellGridCanvas({
   cols,
   rows,
@@ -96,18 +96,22 @@ export function CellGridCanvas({
     const container = containerRef.current;
     if (!container) return;
     const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
       if (!isZoomWheel(e)) {
+        // other tools: let the work area scroll natively
+        if (!panTool) return;
+        e.preventDefault();
+        e.stopPropagation();
         setPanOffset((o) => ({ x: o.x - e.deltaX, y: o.y - e.deltaY }));
         return;
       }
+      e.preventDefault();
+      e.stopPropagation();
       const step = zoomStep(wheelAcc, e.deltaY);
       if (step) onWheelZoom(step);
     };
     container.addEventListener('wheel', handleWheel, { passive: false });
     return () => container.removeEventListener('wheel', handleWheel);
-  }, [onWheelZoom]);
+  }, [onWheelZoom, panTool]);
 
   const getCell = (e: React.MouseEvent<HTMLCanvasElement>): Point | null => {
     const rect = canvasRef.current?.getBoundingClientRect();
@@ -118,13 +122,13 @@ export function CellGridCanvas({
   };
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (e.button === 1 || e.button === 2 || (panTool && e.button === 0)) {
+    if (panTool && (e.button === 0 || e.button === 1 || e.button === 2)) {
       e.preventDefault();
       setIsPanning(true);
       setPanStart({ x: e.clientX - panOffset.x, y: e.clientY - panOffset.y });
       return;
     }
-    if (panTool) return;
+    if (panTool || e.button !== 0) return;
     const c = getCell(e);
     if (c) onBeginStroke(c);
   };
@@ -144,6 +148,7 @@ export function CellGridCanvas({
       setIsPanning(false);
       return;
     }
+    if (e.button !== 0) return;
     onEndStroke(getCell(e));
   };
 
@@ -181,7 +186,7 @@ export function CellGridCanvas({
           <div className="mt-2 text-sm text-gray-400 text-center">
             <p>{status}</p>
             <p className="text-xs text-gray-500 mt-1">
-              {hover && hoverLabel ? hoverLabel(hover.x, hover.y) : 'Scroll or right-click drag to pan • Pinch or Ctrl/Cmd+scroll to zoom'}
+              {hover && hoverLabel ? hoverLabel(hover.x, hover.y) : 'Pinch or Ctrl/Cmd+scroll to zoom'}
             </p>
           </div>
         </div>

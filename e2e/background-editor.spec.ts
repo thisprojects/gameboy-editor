@@ -170,7 +170,7 @@ test.describe('map editor', () => {
     await expect.poll(async () => (await canvasSize(page, MAP)).width).toBe(32 * 8 * 1);
   });
 
-  test('the right mouse button pans the view without painting', async ({ page }) => {
+  test('the right mouse button does not pan or paint unless the pan tool is selected', async ({ page }) => {
     const canvas = page.getByTestId(MAP);
     const before = (await canvas.boundingBox())!;
     await page.mouse.move(before.x + 100, before.y + 100);
@@ -178,8 +178,8 @@ test.describe('map editor', () => {
     await page.mouse.move(before.x + 160, before.y + 130, { steps: 5 });
     await page.mouse.up({ button: 'right' });
     const after = (await canvas.boundingBox())!;
-    expect(Math.round(after.x - before.x)).toBe(60);
-    expect(Math.round(after.y - before.y)).toBe(30);
+    expect(Math.round(after.x - before.x)).toBe(0);
+    expect(Math.round(after.y - before.y)).toBe(0);
     expect(await exportMap(page)).toEqual(flat(meadow.map)); // nothing was painted
   });
 

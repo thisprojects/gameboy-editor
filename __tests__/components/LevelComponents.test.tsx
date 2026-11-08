@@ -60,7 +60,7 @@ describe('CellGridCanvas', () => {
   it('shows the default hint without a hover label and ignores presses outside', () => {
     const { props, canvas } = setup({ hoverLabel: undefined });
     fireEvent.mouseMove(canvas, at(1, 1));
-    expect(screen.getByText(/Scroll or right-click drag to pan/)).toBeInTheDocument();
+    expect(screen.getByText(/Pinch or Ctrl\/Cmd\+scroll to zoom/)).toBeInTheDocument();
     fireEvent.mouseDown(canvas, { clientX: 999, clientY: 5 });
     fireEvent.mouseMove(canvas, { clientX: 999, clientY: 5 });
     expect(props.onBeginStroke).not.toHaveBeenCalled();
@@ -69,7 +69,7 @@ describe('CellGridCanvas', () => {
     expect(props.onEndStroke).toHaveBeenCalledWith(null);
   });
 
-  it('pans with right/middle button without painting', () => {
+  it('right/middle button neither pans nor paints without the pan tool', () => {
     const { props, canvas } = setup();
     fireEvent.mouseDown(canvas, at(1, 1, { button: 2 }));
     fireEvent.mouseMove(canvas, at(2, 2));
@@ -77,8 +77,6 @@ describe('CellGridCanvas', () => {
     fireEvent.mouseDown(canvas, at(1, 1, { button: 1 }));
     fireEvent.mouseLeave(canvas);
     expect(props.onBeginStroke).not.toHaveBeenCalled();
-    expect(props.onContinueStroke).not.toHaveBeenCalled();
-    expect(props.onEndStroke).not.toHaveBeenCalled();
   });
 
   it('pan tool pans with the left button and never begins a stroke', () => {

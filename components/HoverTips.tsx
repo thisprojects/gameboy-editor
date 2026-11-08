@@ -14,7 +14,12 @@ export function tipFor(el: Element): string | null {
   if (explicit) return explicit;
   const title = el.getAttribute('title');
   if (title) {
-    if (!el.getAttribute('aria-label') && !el.textContent?.trim()) el.setAttribute('aria-label', title);
+    // keep the text available to assistive tech once the native title is gone
+    if (!el.textContent?.trim()) {
+      if (!el.getAttribute('aria-label')) el.setAttribute('aria-label', title);
+    } else if (!el.getAttribute('aria-description')) {
+      el.setAttribute('aria-description', title);
+    }
     el.setAttribute('data-tip', title);
     el.removeAttribute('title');
     return title;

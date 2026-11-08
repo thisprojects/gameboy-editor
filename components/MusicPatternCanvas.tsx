@@ -273,7 +273,17 @@ export function MusicPatternCanvas({
           instruments={instruments}
           x={editTarget.x}
           y={editTarget.y}
-          onChange={(update) => onSetCell(editTarget.channel, editTarget.row, update)}
+          onChange={(update) => {
+            // a note-off cell has no instrument: turning it into a real note must give it one, or it stays silent
+            const becomesNote = update.note !== undefined && update.note !== null && update.note !== NOTE_OFF;
+            onSetCell(
+              editTarget.channel,
+              editTarget.row,
+              becomesNote && editCell.instrument === null
+                ? { instrument: channelInstrument[editTarget.channel] ?? 0, ...update }
+                : update
+            );
+          }}
           onClose={() => setEditTarget(null)}
         />
       )}

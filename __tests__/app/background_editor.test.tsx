@@ -76,7 +76,7 @@ describe('Background editor page', () => {
     click.mockRestore();
   });
 
-  it('selects a tile from the palette and clears the map (undoable)', () => {
+  it('selects a tile from the palette; clearing an already empty map adds no undo step', () => {
     render(<MapEditorPage />);
     const palette = screen.getByTestId('tile-palette');
     jest.spyOn(palette, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 0, width: 192, height: 24, right: 192, bottom: 24, x: 0, y: 0, toJSON: () => ({}) });
@@ -85,6 +85,6 @@ describe('Background editor page', () => {
     const undo = screen.getByTitle('Undo (Ctrl+Z)');
     expect(undo).toBeDisabled();
     fireEvent.click(screen.getByText('Clear map'));
-    expect(undo).toBeEnabled();
+    expect(undo).toBeDisabled();
   });
 });

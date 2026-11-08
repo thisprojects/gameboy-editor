@@ -115,7 +115,7 @@ export function useLevelProject({
           }
           if (setLibrary({ ...dims, tiles: d.tiles, metatiles: d.metatiles })) {
             alert(
-              'This library has no empty metatile 0, so one was added in front. Metatile numbers moved up by one: cells you had already painted now show the next metatile along. Undo is not available for an import; re-import or repaint if that is not what you want.'
+              'This library has no empty metatile 0, so one was added in front. Metatile numbers moved up by one, and the cells you had already painted were moved up with them so they still show the same metatiles. Undo is not available for an import.'
             );
           }
         } catch {

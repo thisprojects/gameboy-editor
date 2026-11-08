@@ -113,8 +113,15 @@ describe('TileCanvas', () => {
     expect(props.onStrokeStart).not.toHaveBeenCalled();
   });
 
-  it('a plain wheel (trackpad swipe) pans and does not zoom', () => {
+  it('a plain wheel does not pan or zoom unless the pan tool is selected', () => {
     const { props, canvas } = setup();
+    fireEvent.wheel(canvas, { deltaX: -50, deltaY: 0 });
+    expect(props.onPixelSizeChange).not.toHaveBeenCalled();
+    expect(canvas.parentElement!.style.transform).toContain('translate(0px');
+  });
+
+  it('a plain wheel (trackpad swipe) pans with the pan tool and does not zoom', () => {
+    const { props, canvas } = setup({ currentTool: 'pan' });
     fireEvent.wheel(canvas, { deltaX: -50, deltaY: 0 });
     expect(props.onPixelSizeChange).not.toHaveBeenCalled();
     expect(canvas.parentElement!.style.transform).toContain('translate(50px');

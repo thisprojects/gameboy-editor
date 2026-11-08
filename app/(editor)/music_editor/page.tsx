@@ -59,19 +59,23 @@ export default function MusicEditorPage() {
         seq.setCursorChannel(Math.min(MUSIC_CHANNELS - 1, seq.cursorChannel + 1));
       } else if (e.key === 'Backspace' || e.key === 'Delete') {
         e.preventDefault();
+        if (e.repeat) return;
         seq.clearCell(seq.cursorChannel, seq.cursorRow);
       } else if (e.key === '1') {
         e.preventDefault();
+        if (e.repeat) return;
         seq.enterNoteOff(seq.cursorChannel, seq.cursorRow);
         seq.setCursorRow(Math.min(lastRow, seq.cursorRow + 1));
       } else {
         const key = e.key.toLowerCase();
         if (KEY_TO_NOTE_BASE[key]) {
           e.preventDefault();
+          if (e.repeat) return; // holding a key must not fill the following rows
           seq.enterNote(seq.cursorChannel, seq.cursorRow, KEY_TO_NOTE_BASE[key]);
           seq.setCursorRow(Math.min(lastRow, seq.cursorRow + 1));
         } else if (KEY_TO_NOTE_UP[key]) {
           e.preventDefault();
+          if (e.repeat) return;
           const upOctave = Math.min(MAX_OCTAVE, (seq.channelOctave[seq.cursorChannel] ?? 4) + 1);
           seq.enterNote(seq.cursorChannel, seq.cursorRow, KEY_TO_NOTE_UP[key], upOctave);
           seq.setCursorRow(Math.min(lastRow, seq.cursorRow + 1));

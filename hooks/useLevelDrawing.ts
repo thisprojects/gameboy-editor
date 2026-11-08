@@ -173,9 +173,13 @@ export function useLevelDrawing() {
       setLibraryState(lib);
       const maxW = maxLevelMetatiles(lib.mw);
       const maxH = maxLevelMetatiles(lib.mh);
-      setState((prev) => ({
-        map: clampMap(resizeGrid(prev.map, Math.min(prev.map[0].length, maxW), Math.min(prev.map.length, maxH)), lib.metatiles.length),
-      }));
+      setState((prev) => {
+        // the inserted blank metatile 0 moved every real metatile up by one: move the painted cells with them
+        const base = lib !== imported ? prev.map.map((row) => row.map((v) => (v === 0 ? 0 : v + 1))) : prev.map;
+        return {
+          map: clampMap(resizeGrid(base, Math.min(base[0].length, maxW), Math.min(base.length, maxH)), lib.metatiles.length),
+        };
+      });
       setSelectedMetatile((s) => Math.min(s, lib.metatiles.length - 1));
       return shifted;
     },

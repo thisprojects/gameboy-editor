@@ -208,10 +208,16 @@ test.describe('first visit', () => {
   });
 });
 
-test('a plain scroll (trackpad swipe) pans sideways and does not zoom', async ({ page }) => {
+test('a plain scroll (trackpad swipe) does not pan or zoom with the pencil, but pans sideways with the Pan tool', async ({ page }) => {
   await page.goto('/tile_editor');
   const canvas = page.getByTestId(CANVAS);
   const before = await canvas.boundingBox();
+  await canvas.hover();
+  await page.mouse.wheel(-120, 0);
+  await page.waitForTimeout(300);
+  expect(Math.round((await canvas.boundingBox())!.x - before!.x)).toBe(0);
+  expect((await canvasSize(page, CANVAS)).width).toBe(4 * 8 * PX);
+  await page.getByRole('button', { name: 'Pan', exact: true }).click();
   await canvas.hover();
   await page.mouse.wheel(-120, 0);
   await expect.poll(async () => (await canvas.boundingBox())!.x).toBeGreaterThan(before!.x + 100);

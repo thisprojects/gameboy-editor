@@ -249,4 +249,30 @@ describe('FileNameModal – docs link text', () => {
     expect(screen.getByRole('link', { name: 'Read the example' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /Game Boy/ })).not.toBeInTheDocument();
   });
+
+  describe('file name validation', () => {
+    const defaultProps = {
+      isOpen: true,
+      action: 'save' as const,
+      fileName: 'test',
+      onFileNameChange: jest.fn(),
+      onConfirm: jest.fn(),
+      onCancel: jest.fn(),
+    };
+    beforeEach(() => jest.clearAllMocks());
+    it.each(['', '   ', 'a/b', 'a:b'])('refuses %j: confirm disabled and Enter does nothing', (name) => {
+      render(<FileNameModal {...defaultProps} fileName={name} />);
+      expect(screen.getByRole('alert')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+      fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' });
+      expect(defaultProps.onConfirm).not.toHaveBeenCalled();
+    });
+
+    it('accepts a normal name', () => {
+      render(<FileNameModal {...defaultProps} fileName="my_song" />);
+      expect(screen.queryByRole('alert')).toBeNull();
+      fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' });
+      expect(defaultProps.onConfirm).toHaveBeenCalledTimes(1);
+    });
+  });
 });

@@ -820,4 +820,35 @@ describe('useHistory hook', () => {
       });
     });
   });
+
+  describe('no-op checkpoints', () => {
+    it('a push followed by an unchanged setState adds no undo step and keeps redo', () => {
+      const { result } = renderHook(() => useHistory({ v: [1] }));
+      act(() => { result.current.push(); result.current.setState({ v: [2] }); });
+      act(() => result.current.undo());
+      expect(result.current.canRedo).toBe(true);
+      act(() => { result.current.push(); result.current.setState((p) => ({ v: [...p.v] })); }); // same content
+      expect(result.current.canUndo).toBe(false);
+      expect(result.current.canRedo).toBe(true);
+      act(() => result.current.redo());
+      expect(result.current.state).toEqual({ v: [2] });
+    });
+
+    it('a push followed by a real change is kept, and later states are not affected by earlier ones', () => {
+      const { result } = renderHook(() => useHistory({ v: [1] }));
+      act(() => { result.current.push(); result.current.setState((p) => ({ v: [...p.v, 2] })); });
+      expect(result.current.canUndo).toBe(true);
+      act(() => result.current.undo());
+      expect(result.current.state).toEqual({ v: [1] });
+    });
+
+    it('restores the oldest entry when the dropped checkpoint had pushed it out of a full history', () => {
+      const { result } = renderHook(() => useHistory({ n: 0 }, { maxHistory: 2 }));
+      for (const n of [1, 2]) act(() => { result.current.push(); result.current.setState({ n }); });
+      act(() => { result.current.push(); result.current.setState({ n: 2 }); }); // no-op
+      act(() => result.current.undo());
+      act(() => result.current.undo());
+      expect(result.current.state).toEqual({ n: 0 });
+    });
+  });
 });

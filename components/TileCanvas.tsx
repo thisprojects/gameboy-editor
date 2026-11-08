@@ -185,23 +185,29 @@ export function TileCanvas({
     const container = containerRef.current;
     if (!container) return;
     const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
       if (backgroundAdjustMode && tracing) {
+        e.preventDefault();
+        e.stopPropagation();
         onBackgroundScale(Math.max(0.1, Math.min(5, backgroundScale + (e.deltaY > 0 ? -0.1 : 0.1))));
         return;
       }
       if (!isZoomWheel(e)) {
+        // other tools: let the work area scroll natively
+        if (currentTool !== 'pan') return;
+        e.preventDefault();
+        e.stopPropagation();
         setPanOffset((o) => ({ x: o.x - e.deltaX, y: o.y - e.deltaY }));
         return;
       }
+      e.preventDefault();
+      e.stopPropagation();
       const step = zoomStep(wheelAcc, e.deltaY);
       const newSize = Math.max(1, pixelSize + step);
       if (step && newSize !== pixelSize) onPixelSizeChange(newSize);
     };
     container.addEventListener('wheel', handleWheel, { passive: false });
     return () => container.removeEventListener('wheel', handleWheel);
-  }, [pixelSize, onPixelSizeChange, backgroundAdjustMode, tracing, backgroundScale, onBackgroundScale]);
+  }, [pixelSize, onPixelSizeChange, backgroundAdjustMode, tracing, backgroundScale, onBackgroundScale, currentTool]);
 
   const getPixelCoords = (e: React.MouseEvent<HTMLCanvasElement>): Point | null => {
     const canvas = canvasRef.current;
@@ -228,10 +234,11 @@ export function TileCanvas({
       }
       return;
     }
-    if (e.button === 1 || e.button === 2 || (currentTool === 'pan' && e.button === 0)) {
+    if (currentTool === 'pan' && (e.button === 0 || e.button === 1 || e.button === 2)) {
       startPan(e);
       return;
     }
+    if (e.button !== 0) return;
 
     const coords = getPixelCoords(e);
     if (!coords) return;
@@ -287,6 +294,12 @@ export function TileCanvas({
     onSetIsDrawing(false);
   };
 
+  const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    // a right/middle release must not end a left-button stroke (it can only end a pan)
+    if (e.button !== 0 && !isPanning) return;
+    stopInteraction();
+  };
+
   const statusMessage = (() => {
     if (backgroundAdjustMode && tracing) return 'Drag to move image, scroll to scale';
     switch (currentTool) {
@@ -319,7 +332,7 @@ export function TileCanvas({
               height={canvasHeight * pixelSize}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
-              onMouseUp={stopInteraction}
+              onMouseUp={handleMouseUp}
               onMouseLeave={stopInteraction}
               onContextMenu={(e) => e.preventDefault()}
               className={`border border-gray-600 ${cursorClass}`}
@@ -328,7 +341,7 @@ export function TileCanvas({
           </div>
           <div className="mt-2 text-sm text-gray-400 text-center">
             <p>{statusMessage}</p>
-            <p className="text-xs text-gray-500 mt-1">Scroll or right-click drag to pan • Pinch or Ctrl/Cmd+scroll to zoom</p>
+            <p className="text-xs text-gray-500 mt-1">Pinch or Ctrl/Cmd+scroll to zoom</p>
           </div>
         </div>
       </div>

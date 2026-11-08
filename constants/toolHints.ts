@@ -4,7 +4,7 @@ export const TOOL_HINTS: Record<string, string> = {
   Line: 'drag to draw a straight line in the selected shade',
   Rubber: 'erase back to shade 0 (transparent in sprites); drag to erase',
   'Bucket (flood fill)': 'fill the connected area of one shade with the selected shade',
-  Pan: 'drag to move the view (right or middle mouse button pans with any tool)',
+  Pan: 'drag to move the view (panning only works with this tool)',
   Stamp: 'paint the selected item; drag to paint continuously',
   Rectangle: 'drag out a rectangle and fill it with the selected item',
   'Select area': 'click a cell or drag an area, then Clear selection (or Delete) resets it to the empty background',
